@@ -1,0 +1,14 @@
+--- /tmp/pbsa.f	2009-07-17 15:49:16.000000000 -0700
++++ pbsa.f	2009-07-17 15:49:21.000000000 -0700
+@@ -735,6 +735,11 @@
+    REQUIRE( ier == 0 )
+    deallocate( r_stack, stat = ier )
+    REQUIRE( ier == 0 )
++   if( igb /= 10 ) then
++      call deallocate_gb( )
++   else
++      call pb_free( )
++   end if
+    deallocate( ih, stat = ier )
+    REQUIRE( ier == 0 )
+    deallocate( ipairs, stat = ier )

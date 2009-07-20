@@ -1,0 +1,60 @@
+--- /tmp/force.f	2009-07-17 15:53:16.000000000 -0700
++++ force.f	2009-07-17 15:47:15.000000000 -0700
+@@ -8,6 +8,8 @@
+       fs, rborn, reff ,do_list_update )
+ 
+    use genborn
++   use poisson_boltzmann, only : pb_force
++   use dispersion_cavity, only : npopt, np_force
+ 
+    implicit none
+    logical do_list_update
+@@ -33,6 +35,7 @@
+ #  include "files.h"
+ #  include "extra.h"
+ #  include "flocntrl.h"
++#  include "pb_md.h"
+ 
+    _REAL_  r_stack(*)
+    integer i_stack(*)
+@@ -215,6 +218,40 @@
+ 
+    end if  ! ( igb /= 0 .and. igb /= 10)
+    
++
++   !     -- when igb==10, all nonbonds are done in routine pb_force:
++   !                      all nonpolar interactions are done in np_force:
++
++#ifdef MPI
++   if(mytaskid == 0)then
++#endif
++      if( igb == 10 ) then
++
++         call timer_start(TIME_PBFORCE)
++         call pb_force(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),ix(i10), &
++                       cn1,cn2,xx(l15),x,f,evdw,eelt,epol)
++         if ( pbgrid ) pbgrid = .false.
++         if ( pbinit ) pbinit = .false.
++         ene(2) = evdw
++         ene(3) = eelt
++         ene(4) = epol
++         call timer_stop(TIME_PBFORCE)
++
++         call timer_start(TIME_NPFORCE)
++         esurf = 0.0d0; edisp = 0.0d0
++         if ( ifcap == 0 ) &
++         call np_force(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),&
++                       cn1,cn2,x,f,esurf,edisp)
++         if ( pbprint ) pbprint = .false.
++         ene(23) = esurf
++         ene(24) = edisp
++         call timer_stop(TIME_NPFORCE)
++
++      end if  ! ( igb == 10 )
++#ifdef MPI
++   end if
++#endif
++
+ #ifdef MPI
+    call timer_barrier( commsander )
+    call timer_start(TIME_COLLFRC)
