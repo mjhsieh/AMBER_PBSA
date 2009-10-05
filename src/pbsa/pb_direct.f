@@ -1,7 +1,7 @@
 ! <compile=optimized>
 #include "copyright.h"
 #include "is_copyright.h"
-#include "dprec.h"
+#include "../include/dprec.fh"
 #include "is_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
