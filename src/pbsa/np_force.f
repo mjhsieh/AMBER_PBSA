@@ -1,9 +1,8 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
-#include "def_time.h"
+#include "pb_def.h"
+#include "timer.h"
 
 module dispersion_cavity
 
@@ -15,6 +14,8 @@ module dispersion_cavity
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    implicit none
+
+#  include "constants.h"
 
    logical donpsa
    integer npopt
@@ -33,9 +34,11 @@ subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfd
 
    use poisson_boltzmann, only : cutnb, acrd, iprshrt, iar1pb, nex, iex
    use solvent_accessibility
+   use timer_module
 
    ! Common variables
     
+#  include "md.h"
 #  include "pb_md.h"
 
    ! Passed variables
@@ -60,7 +63,7 @@ subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfd
    if ( donpsa ) then
       if ( use_rmin == 0 ) call sa_init(pbverbose,pbprint,natom,sprob,mdsig,radip,radip2)
       if ( use_rmin == 1 ) call sa_init(pbverbose,pbprint,natom,sprob,rmin,radip,radip2)
-      call sa_driver(pbverbose,pbprint,natom,dosas,ndosas,npbstep,nsaslag,&
+      call sa_driver(pbverbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag,&
            acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
    end if
    call timer_stop(TIME_NPSAS)
@@ -126,8 +129,6 @@ contains
 !+ dispersion solvation energy and force
 subroutine np_dispersion( )
 
-   use constants, only: TWOPI, FOURPI    
-
    ! Passed variables
     
    ! integer natom              ! no of atoms
@@ -156,24 +157,26 @@ subroutine np_dispersion( )
    ! Local variables
 
    integer iatm, jatm, katm
-   integer iarc, idot, jdot
+!  integer iarc, idot, jdot
+   integer jdot
    integer i, j, ii, ip1, ip2
-   integer firstdot, lastarc
-   integer narcik
+!  integer firstdot, lastarc
+!  integer narcik
    integer nbindex
    integer nblist(natom)
 
    _REAL_ dx, dy, dz, d2
    _REAL_ ris(3), risnorm(3), ris1, ris2, ris4, ris_1
    _REAL_ snorm(3), r_1, dotprot
-   _REAL_ rls(3), rls2, rls4
+!  _REAL_ rls(3), rls2, rls4
    _REAL_ adis
    _REAL_ cutoff, cutoff4, cutlng, rcut2    
-   _REAL_ rarc_1, rarcx, rarcy, rarcz
-   _REAL_ avegamma, tmpgamma
+!  _REAL_ rarc_1, rarcx, rarcy, rarcz
+!  _REAL_ avegamma, tmpgamma
    _REAL_ costheta, cross_sect
    _REAL_ tmpg, tmpf, gcorrec
-   _REAL_ tmpfx, tmpfy, tmpfz, fxcorrec, fycorrec, fzcorrec
+!  _REAL_ tmpfx, tmpfy, tmpfz, fxcorrec, fycorrec, fzcorrec
+   _REAL_ tmpfx, tmpfy, tmpfz
    _REAL_ delts(natom)
    _REAL_ nbd, nbd2(natom), nbdx(natom), nbdy(natom), nbdz(natom)
 
@@ -190,6 +193,8 @@ subroutine np_dispersion( )
    !   enddo
    !enddo
    !close(55)
+
+   adis = ZERO ! mjhsieh initialization
  
    if (cutnb == ZERO) then
       cutoff = 999.9d0

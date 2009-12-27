@@ -1,8 +1,7 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
+#include "pb_def.h"
 
 module solvent_accessibility
 
@@ -17,6 +16,7 @@ module solvent_accessibility
    integer               :: narcdot       ! no of sa arc dots
    integer               :: narc          ! no of sa arcs
    _REAL_              :: dprob         ! solvent probe for dielectric surface
+   _REAL_              :: iprob         ! ion probe for stern surface
    _REAL_              :: sprob         ! solvent probe for dispersion surface
    _REAL_              :: vprob         ! solvent probe for cavity volume
    _REAL_              :: arcres        ! arc dot resolution, with respect to the grid spacing
@@ -109,6 +109,8 @@ subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
    !character (len=4) :: isymbl(natom)
    _REAL_ prob, r(natom), rp(natom), rp2(natom)
 
+#  include "constants.h"
+
    ! Local variables
     
    integer iatm
@@ -133,8 +135,13 @@ subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
    !      call mexit(6, 1)
    !   end if
    !end do
-   
-   if ( verbose .and. pbprint ) write(6, *) ' SA surface: setting up working radii'
+    
+   if ( verbose .and. pbprint ) then 
+      write(6,*)
+      write(6,*) '======== Setting up Solvent Accessibility Data ========'
+      write(6,*) 'Setting up working radii'
+   end if
+    
    nsatm = 0
    do iatm = 1, natom
       if ( r(iatm) == ZERO ) then
@@ -147,7 +154,7 @@ subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
          nzratm(nsatm) = iatm
       endif
    end do
-   if ( verbose .and. pbprint ) write(6, *) ' SA surface: found nonzero radii', nsatm
+   if ( verbose .and. pbprint ) write(6, *) 'Found nonzero radii', nsatm
 
 end subroutine sa_init
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -255,6 +262,8 @@ subroutine pb_aaradi( natom, nbonh, ibh, jbh, radi, acrg, ucrgh, ucrga, resid, i
    integer ibh(*), jbh(*)
    character (len=4) :: resid(*), igraph(*), isymbl(*)
    _REAL_ radi(*), acrg(*), ucrgh(*), ucrga(*), rin(*)
+
+#  include "constants.h"
 
    ! Local variables
     
@@ -540,13 +549,14 @@ subroutine sa_sphere(maxsph, scrd)
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   use constants, only : PI, TWOPI
    implicit none
 
    ! Passed variables
 
    integer maxsph
    _REAL_ scrd(3, *)
+
+#  include "constants.h"
 
    ! Local variables
 
@@ -555,8 +565,8 @@ subroutine sa_sphere(maxsph, scrd)
 
    ! begin code
 
-   ntheta = sqrt(PI*maxsph/FOUR)
-   npsimax = TWO*ntheta
+   ntheta = int(sqrt(PI*maxsph/FOUR))
+   npsimax = int(TWO*ntheta)
    thtstp = PI/ntheta
 
    i = 1
@@ -582,17 +592,17 @@ subroutine sa_sphere(maxsph, scrd)
 end subroutine sa_sphere
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of solvent accessible surface and arcs
-subroutine sa_driver( verbose,pbprint,natom,dosas,ndosas,npbstep,nsaslag,acrd,iar1pb,iprshrt,nex,iex )
+subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag,acrd,iar1pb,iprshrt,nex,iex )
  
-   use constants, only: PI, TWOPI, FOURPI   
-
    ! Passed variables
     
    logical verbose, pbprint
-   integer natom, dosas, ndosas, npbstep, nsaslag
+   integer ipb, inp, natom, dosas, ndosas, npbstep, nsaslag
    integer iar1pb(6,0:natom), iprshrt(*), nex(natom), iex(32,natom)
    _REAL_ acrd(3,1:natom)
     
+#  include "constants.h"
+
    ! Local variables
     
    integer ip, iatm
@@ -606,8 +616,8 @@ subroutine sa_driver( verbose,pbprint,natom,dosas,ndosas,npbstep,nsaslag,acrd,ia
    if ( dosas .eq. ndosas) then
       dosas = 1
       call sa_srf( verbose, pbprint, natom )
-      call sa_arc( verbose, pbprint, natom )
-      call sa_vol( verbose, pbprint, natom )
+      if ( ipb == 1 .or. ipb == 2 ) call sa_arc( verbose, pbprint, natom )
+      if ( inp == 2 ) call sa_vol( verbose, pbprint, natom )
    end if
     
    ! compute time-averaged atomic exposures over the last nsaslag steps
@@ -672,6 +682,8 @@ subroutine sa_srf( verbose,pbprint,natom )
    logical verbose, pbprint
    integer natom
     
+#  include "constants.h"
+
    ! Local variables
     
    integer alloc_err(4)
@@ -861,7 +873,7 @@ subroutine sa_arc( verbose,pbprint,natom )
    integer natom
     
    integer alloc_err(8)
-   integer ksrf, lsrf, msrf, isph
+   integer ksrf, lsrf, msrf!, isph
    integer fstsph(natom), lstsph(natom), fstsph1(natom), lstsph1(natom)
 
    allocate( fstadot(            natom), stat = alloc_err(1) )
@@ -874,7 +886,9 @@ subroutine sa_arc( verbose,pbprint,natom )
       call mexit(6, 1)
    end if
     
+   !to silence valgrind errors
    fstarc = 0; lstarc = 0; marc = 0; fstsph = 0; lstsph = 0 
+   fstsph1 = 0; lstsph1 = 0; ksrf = 0; msrf = 0; lsrf = 0
     
    ! get all possible arcs and arc dots
 
@@ -962,6 +976,9 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
     
    integer natom, msrf, fstsph(*), lstsph(*)
    _REAL_ cstep
+
+#  include "constants.h"
+
     
    ! Local variables
     
@@ -972,7 +989,7 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
    _REAL_ arcctr(3), frc_ctr
    _REAL_ psi, cosphi, sinphi
     
-   _REAL_, parameter :: small = 0.001d0
+   _REAL_, parameter :: small = 0.000001d0
 
    narc = 0; msrf = 0
    ilast = natom - 1
@@ -1032,7 +1049,11 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
          else if ( abs(dyij) < small ) then
             ! the vector is aligned with the x-axis
             cosphi = ZERO
-            sinphi = ONE
+            if ( dxij > ZERO ) then
+               sinphi = ONE
+            else
+               sinphi = - ONE
+            end if
 
             ! otherwise ...
          else if ( dyij > ZERO ) then
@@ -1049,7 +1070,7 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
           
          ! generating dots on the arc
           
-         nspha = TWOPI*radius/cstep
+         nspha = int(TWOPI*radius/cstep)
          psi = ZERO
          do isph = 1, nspha
             msrf = msrf + 1
@@ -1094,6 +1115,8 @@ subroutine exclud( natom,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,sp
    integer natom, istart, istop, lsrf, msrf
    integer fstsph(*), lstsph(*), fstsph1(*), lstsph1(*), spharc(*), spharc1(*)
    _REAL_ sphcrd(3,*), sphcrd1(3,*)
+
+#  include "constants.h"
     
    integer jp, iatm, jatm, ilast, jfirst, jlast, isph, jsph
    _REAL_ xi, yi, zi, xj, yj, zj
@@ -1181,16 +1204,21 @@ subroutine sa_vol( verbose,pbprint,natom )
    logical verbose, pbprint
    integer natom
     
+#  include "constants.h"
+
    ! Local variables
     
    integer alloc_err
-   integer iatm, volnum, nbuffer, i, j, k, xm, ym, zm, xmymzm
+   integer iatm, volnum, nbuffer, xm, ym, zm, xmymzm!, i, j, k
    integer, allocatable :: insas(:) 
     
    _REAL_ xmin, xmax, ymin, ymax, zmin, zmax, xbox, ybox, zbox
    _REAL_ htmp, rh, gox, goy, goz, range1, xi, yi, zi
    _REAL_ gcrd(3, natom)
     
+   ! to silence valgrind errors
+   volnum = 0
+
    htmp = 0.5d0; rh = ONE/htmp
    nbuffer = 2*(int(TWO*vprob*rh)+1)+1
     
@@ -1209,21 +1237,21 @@ subroutine sa_vol( verbose,pbprint,natom )
    xbox = (xmax + xmin)/TWO; ybox = (ymax + ymin)/TWO; zbox = (zmax + zmin)/TWO
    xbox = nint(xbox*rh)*htmp; ybox = nint(ybox*rh)*htmp; zbox = nint(zbox*rh)*htmp
    if ( verbose .and. pbprint ) then
-      write(6, '(1x,a,3f10.3)') 'Bounding Box Center:  ', xbox, ybox, zbox
-      write(6, '(1x,a,3f10.3)') 'Xmin, Xmax, Xmax-Xmin:', xmin, xmax, xmax-xmin
-      write(6, '(1x,a,3f10.3)') 'Ymin, Ymax, Ymax-Ymin:', ymin, ymax, ymax-ymin
-      write(6, '(1x,a,3f10.3)') 'Zmin, Zmax, Zmax-Zmin:', zmin, zmax, zmax-zmin
+      write(6, '(1x,a,3f10.3)') ' SAV: Bounding Box Center:  ', xbox, ybox, zbox
+      write(6, '(1x,a,3f10.3)') ' SAV: Xmin, Xmax, Xmax-Xmin:', xmin, xmax, xmax-xmin
+      write(6, '(1x,a,3f10.3)') ' SAV: Ymin, Ymax, Ymax-Ymin:', ymin, ymax, ymax-ymin
+      write(6, '(1x,a,3f10.3)') ' SAV: Zmin, Zmax, Zmax-Zmin:', zmin, zmax, zmax-zmin
    end if
     
    xm = nint( (xmax - xmin)*rh ) + nbuffer; xm = 2*nint( REAL(xm)*HALF ) + 1
    ym = nint( (ymax - ymin)*rh ) + nbuffer; ym = 2*nint( REAL(ym)*HALF ) + 1
    zm = nint( (zmax - zmin)*rh ) + nbuffer; zm = 2*nint( REAL(zm)*HALF ) + 1
    xmymzm = xm*ym*zm
-   if ( verbose .and. pbprint ) write(6, '(a,1x,3i5)') ' Grid dimension ', xm, ym, zm
+   if ( verbose .and. pbprint ) write(6, '(a,1x,3i5)') ' SAV: Grid dimension ', xm, ym, zm
    gox = - REAL(xm+1)*htmp*HALF + xbox
    goy = - REAL(ym+1)*htmp*HALF + ybox
    goz = - REAL(zm+1)*htmp*HALF + zbox
-   if ( verbose .and. pbprint ) write(6, '(a,1x,3f10.3)') ' Grid origin ', gox, goy, goz
+   if ( verbose .and. pbprint ) write(6, '(a,1x,3f10.3)') ' SAV: Grid origin ', gox, goy, goz
     
    do iatm = 1, natom
       gcrd(1,iatm) = (acrd(1,iatm) - gox)*rh
@@ -1295,6 +1323,8 @@ subroutine exsasph( xm,ym,zm,range1,xi,yi,zi,insph )
    integer  insph(xm,ym,zm)
    _REAL_ range1, xi, yi, zi
  
+#  include "constants.h"
+
    ! Local variables
     
    integer  i, j, k

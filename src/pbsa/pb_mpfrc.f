@@ -1,8 +1,7 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
+#include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of multipole expansion reaction field interactions
@@ -14,7 +13,6 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   use constants, only: FOURPI
    implicit none
     
    ! passed variables
@@ -23,6 +21,8 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
    _REAL_ rdiel, xctr, yctr, zctr
    _REAL_ epsin, epsout, cg(natom), x(3,natom)
    _REAL_ f(3,natom), eel
+
+#  include "constants.h"
     
    ! local variables
     

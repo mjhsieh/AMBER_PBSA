@@ -1,354 +1,17 @@
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
+#include "pb_def.h"
 
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+ PBMD module parsing and initialization
-subroutine pb_read
-   
-   ! Module variables
-   
-   use poisson_boltzmann
-   use dispersion_cavity
-   use solvent_accessibility
-   implicit none
-   
-   ! Common variables
-   
-#  include "files.h"
-#  include "pb_md.h"
-   
-   ! Passed variables
-     
-   ! Local variables
-       
-   integer bcoption, npbverb, l, phiout, scalec
-   _REAL_ space
-    
-   ! begin code
- 
-   namelist /pb/ epsin, epsout, istrng, pbtemp, &
-      radiopt, dprob, smoothopt, &
-      dbfopt, scalec, npbgrid, nsnbr, nsnba, cutres, cutfd, cutnb, &
-      fillratio, space, nbuffer, accept, maxitn, &
-      maxsph, maxarc, arcres, &
-      npopt, decompopt, use_rmin, sprob, vprob, rhow_effect, use_sav, cavity_surften, cavity_offset, &
-      phiout, phiform, npbverb!, &
-      !pbkappa, radinc, expthresh, &
-      !ndofd, ndosas, nfocus, fscale, solvopt, fmiccg, &
-      !cutsa, bcoption, &
-      !offx, offy, offz, &
-      !sepbuf, mpopt, lmax
-
-   ! initialize with default values
-    
-   outphi = .false.
-   phiout = 0
-   phiform = 0
-    
-   epsin  = 1.0d0
-   epsout = 80.0d0
-   istrng = 0.0d0
-   pbtemp = 300.0d0
-    
-   scalec = 0
-   scalerf = .false.
-    
-   srsas = .true.
-   smoothopt = 0
-   radiopt = 1
-   npopt = 2
-   decompopt = 1
-   use_rmin = 0
-   use_sav = 0
-   rhow_effect = ONE
-   maxsph   = 400
-   maxarcdot= 1500
-   maxarc   = 256
-   nbuffer = 0
-   dprob  = 0.00d0
-   sprob  = 1.60d0
-   vprob  = 1.28d0
-   radinc = sprob*0.5d0
-   expthresh = 0.2d0
-   arcres = 0.5d0
-   cavity_surften = 0.04356d0
-   cavity_offset = -1.008d0
- 
-   nfocus = 2
-   fscale = 8
-   level = 1
-
-   bcoption = 5
-   space = 0.5d0
-   savxm(1) = 0
-   savym(1) = 0
-   savzm(1) = 0
-   savxmym(1) = 0
-   savxmymzm(1) = 0
-   savh(1) = 0
-   savbcopt(1) = 0
-   savxm(nfocus) = 0
-   savym(nfocus) = 0
-   savzm(nfocus) = 0
-   savxmym(nfocus) = 0
-   savxmymzm(nfocus) = 0
-   savh(nfocus) = 0
-   savbcopt(nfocus) = 0
-   offx = ZERO
-   offy = ZERO
-   offz = ZERO
-   fillratio= TWO
-   
-   solvopt = 1
-   fmiccg = -0.30d0
-   accept = 1.0d-3
-   maxitn = 100
-  
-   pbverbose = .false. 
-   pbprint = .true. 
-   pbgrid = .true.
-   pbinit = .true.
-   npbverb = 0
-   npbgrid = 1
-   ndofd = 1
-   dofd = 1
-   donpsa = .true.
-   ndosas = 1
-   nsaslag = 100
-   nsnbr = 1
-   nsnba = 1
-   ntnbr = 1
-   ntnba = 1
-   cutres = 12.0d0
-   cutfd = 5.0d0
-   cutnb = 0.0d0
-   cutsa = 9.0d0
-   lastp = 0
-   pbgamma_int = 1.0
-   pbgamma_ext = 65.0
-   sepbuf = 4.0d0
-   mpopt = 0
-   lmax = 80
-   dbfopt = 1
-    
-   ! reading parameters
-     
-   if ( mdin_pb ) then
-      rewind 5
-      read(5, nml=pb) 
-   end if
-     
-   ! post processing of FD solver options
-     
-   if ( npbverb > 0 ) pbverbose = .true.
-   dofd  = ndofd
-   dosas  = ndosas
-   epsin  = epsin*eps0
-   epsout = epsout*eps0
-   istrng = fioni * istrng
-   pbkappa  = SQRT( TWO * istrng / (epsout * pbkb * pbtemp) )
-        
-   savbcopt(1) = bcoption 
-   do l = 2, nfocus
-      savbcopt(l) = 0
-   end do
-   savh(nfocus) = space
-   do l = nfocus - 1, 1, -1
-      savh(l) = savh(l+1)*fscale
-   end do
-
-   ! sa data set up and checking
-
-   arcres = arcres*savh(nfocus)
-   maxarcdot = 1500*nint(0.5d0/arcres)
-   if ( radiopt == 0 .and. npopt == 2 ) then
-      write(6, *) 'PB Bomb in pb_read(): use of radi other than vdw sigma for'
-      write(6, *) '                      np solvation dispersion/cavity is not supported!'
-      call mexit(6, 1)
-   end if
-   if ( radiopt == 0 ) then
-      donpsa = .false.
-   end if
-
-   ! set up solvent probes for different solvation components
-   ! if end user requests different probes for different solvation
-   ! components, no need to set up different probes here.
-
-   if ( dprob == ZERO ) dprob = sprob
-
-   ! set cutoff for pairwise lists
-       
-   if ( cutfd > cutsa ) then
-      cutsa = cutfd
-   endif
-   if ( cutnb /= 0 .and. cutfd > cutnb ) then
-      cutnb = cutfd
-      write(6, *) 'PB Info in pb_read(): cutnb has been reset to be equal to cutfd'
-   endif
-   if ( max(cutnb,cutsa,cutfd) > cutres ) then
-      write(6, *) 'PB Bomb in pb_read(): cutnb/cutfd must be <= cutres', cutnb, cutfd, cutres
-      call mexit(6, 1)
-   endif
-   if ( cutnb == 0 .and. dbfopt == 0 ) then
-      write(6, *) 'PB Bomb in pb_read(): cutnb=0 cannot be used with dbfopt=0', cutnb, dbfopt
-      call mexit(6, 1)
-   endif
-   cutfd = cutfd**2
-   cutsa = cutsa**2
-   cutnb = cutnb**2
-   cutres = cutres**2
-
-   ! set buffer zone between the fine FD grid boundary and the solute surface:
-
-   if (nbuffer == 0) nbuffer = 2*(int(TWO*sprob/space)+1)+1
-   
-   ! set flag to scale induced surface charges:
-
-   if ( scalec == 1) scalerf = .true. 
-
-   ! set initial grid dimension if not already set, for the default option
-     
-   do l = 1, nfocus
-      savxm(l) = 1
-      savym(l) = 1
-      savzm(l) = 1
-      savxmym(l) = 1
-      savxmymzm(l) = 1
-   end do
-
-   ! set phimap output options when requested
-
-   if ( phiout == 1 ) then
-      outphi = .true.
-      radiopt = 2
-      donpsa = .false.
-      npopt = 0
-   end if
-     
-   return
-end subroutine pb_read 
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+ print out information on current fdpb calculation
-subroutine pb_print ( ifcap ) 
-   
-   ! Module variables
-   
-   use poisson_boltzmann
-   use solvent_accessibility
-   implicit none
-   
-   ! Common variables
-   
-#  include "pb_md.h"
-   
-   ! Passed vriables
-
-   integer ifcap
-   
-   ! Local variables
-   
-   integer ip, iatm
-   
-   ! begin code
-   
-   write(6, *)
-   write(6, *) '======== FDPB Summary ========'
-   write(6, *)
-   write(6, *) 'Do FDPB every', ndofd, 'steps'
-   write(6, *) 'Nonbonded Update'
-   write(6, *) '  residue cutoff is set to', sqrt(cutres)
-   write(6, *) '  fdpb cutoff is set to', sqrt(cutfd)
-   write(6, *) '  sas cutoff is set to', sqrt(cutsa)
-   write(6, *) '  nonbonded cutoff is set to', sqrt(cutnb)
-   write(6, *) 'Grid Constants'
-   write(6, *) '  Grid dimension', xm, ym, zm
-   write(6, *) '  Grid spacing set to', h
-   write(6, *) '  Grid boundary'
-   write(6, '(4x, f10.3, f10.3)') gox, gox + xm * h
-   write(6, '(4x, f10.3, f10.3)') goy, goy + ym * h
-   write(6, '(4x, f10.3, f10.3)') goz, goz + zm * h
-   write(6, *)
-   write(6, *) 'Dielectric Map'
-   if ( ifcap /= 0 ) then
-      write(6, *) '  A single spherical dielectric boundary is used'
-   else
-      if ( radiopt == 0 ) then
-         write(6, *) '  Use cavity radii in the prmtop file'
-      else if ( radiopt == 1 ) then
-         write(6, *) '  Use Tan, Yang, and Luo optimized cavity radii definition'
-      else if ( radiopt == 2 ) then
-         write(6, *) '  Use Pymol radii definition for potential surface display'
-      else
-         write(6, *) 'PB Bomb in pb_init(): Unknown radiopt for cavity radii', radiopt
-         call mexit(6, 1)
-      end if
-   end if
-   if ( .not. srsas ) then
-      write(6, *) '  The following dynamic PB radii are used at this step:'
-      do ip = 1, nsatm
-         iatm = nzratm(ip)
-         write(6, *) iatm, radi(iatm), radip3(ip)
-      end do
-   end if
-   write(6, *)
-   if ( srsas ) then
-      write(6, *) '  Use probe-accessible surface definition'
-      write(6, *) '    Compute SAS every', ndosas, 'steps'
-      write(6, *) '    Solvent probe radius', sprob
-      write(6, *) '    Surface dots per atom', maxsph
-      write(6, *) '    Buried atom radii increment', radinc
-      write(6, *) '    Threshhold for exposed atom', expthresh
-      write(6, *) '    Current SAS', prtsas
-   else
-      write(6, *) '  Use vdw surface definition'
-   endif
-   write(6, *)
-   write(6, *) 'Boundary conditions'
-   if ( bcopt == 1 ) then
-      write(6, *) '  zero potential on boundary'
-   else if ( bcopt == 2 ) then
-      write(6, *) '  solute as a single DH sphere'
-   else if ( bcopt == 3 ) then
-      write(6, *) '  sum of residues as independent DH spheres'
-   else if ( bcopt == 4 ) then
-      write(6, *) '  sum of atoms as independent DH spheres'
-   else if ( bcopt == 5 ) then
-      write(6, *) '  sum of grid charges as independent DH spheres'
-   else if ( bcopt == 0 ) then
-      write(6, *) '  electrostatic focus boundary condition'
-   end if
-   write(6, *)
-   write(6, *) 'Physical constants'
-   write(6, *) '  Solute dielectric constant  :', epsin/eps0
-   write(6, *) '  Solvent dielectric constant :', epsout/eps0
-   write(6, *) '  Temperature (K)             :', pbtemp
-   write(6, *) '  Ionic strength (mM)         :', fiono*istrng
-   write(6, *) '  Debye-Huckel parameter (1/A):', pbkappa
-   write(6, *)
-   write(6, *) 'FD Solver Option'
-   if (solvopt == 1) then
-      write(6, *) '  Use Modified ICCG solver'
-   else if (solvopt == 2) then
-      write(6, *) '  Use SCaled CG solver'
-   end if
-   write(6, *)
-   write(6, *) 'Iteration data'
-   write(6, *) '  Maximum iterations  :', maxitn
-   write(6, *) '  Convergence criteria:', accept
-   
-   return
-end subroutine pb_print
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ PBMD cleanup routine
 subroutine pb_free
 
    use poisson_boltzmann
    use solvent_accessibility
+
    implicit none
 
-#include "box.h"
+#  include "box.h"
 
    integer alloc_err(64)
 
@@ -386,8 +49,7 @@ subroutine pb_free
    else
  
    deallocate(    acrd, stat = alloc_err(9 ) )
-   deallocate(    gcrd, stat = alloc_err(10 ) )
-
+   deallocate(    gcrd, stat = alloc_err(10) )
    deallocate(    radi, stat = alloc_err(11) )
    deallocate(  radip3, stat = alloc_err(12) )
    deallocate(  nzratm, stat = alloc_err(13) )
@@ -400,6 +62,7 @@ subroutine pb_free
    deallocate(   cn1pb, stat = alloc_err(27) )
    deallocate(   cn2pb, stat = alloc_err(28) )
    deallocate(   cn3pb, stat = alloc_err(29) )
+
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
         alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
         alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
@@ -411,37 +74,39 @@ subroutine pb_free
    end if
 
    deallocate(    phi, stat = alloc_err(1 ) )
-   deallocate(   epsx, stat = alloc_err(2 ) )
-   deallocate(   epsy, stat = alloc_err(3 ) )
-   deallocate(   epsz, stat = alloc_err(4 ) )
-   deallocate( iepsav, stat = alloc_err(5 ) )
-   deallocate(  insas, stat = alloc_err(6 ) )
-   deallocate( atmsas, stat = alloc_err(7 ) )
-   !deallocate( fedgex, stat = alloc_err(8 ) )
-   !deallocate( fedgey, stat = alloc_err(9 ) )
-   !deallocate( fedgez, stat = alloc_err(10) )
-   !deallocate( fatomx, stat = alloc_err(11) )
-   !deallocate( fatomy, stat = alloc_err(12) )
-   !deallocate( fatomz, stat = alloc_err(13) )
-   deallocate(    sbv, stat = alloc_err(14) )
-   deallocate(     ad, stat = alloc_err(15) )
-   deallocate(     rd, stat = alloc_err(16) )
-   deallocate(    am1, stat = alloc_err(17) )
-   deallocate(    am2, stat = alloc_err(18) )
-   deallocate(    am3, stat = alloc_err(19) )
-   deallocate(     bv, stat = alloc_err(20) )
-   deallocate(     zv, stat = alloc_err(21) )
-   deallocate(     pv, stat = alloc_err(22) )
-   deallocate(     tv, stat = alloc_err(23) )
-   deallocate(     xs, stat = alloc_err(24) )
+   deallocate(    sbv, stat = alloc_err(2 ) )
+   deallocate(     bv, stat = alloc_err(3 ) )
+   deallocate(   epsx, stat = alloc_err(4 ) )
+   deallocate(   epsy, stat = alloc_err(5 ) )
+   deallocate(   epsz, stat = alloc_err(6 ) )
+   deallocate(     iv, stat = alloc_err(7 ) )
+
+   deallocate(  insas, stat = alloc_err(8 ) )
+   deallocate( atmsas, stat = alloc_err(9 ) )
+   deallocate( lvlset, stat = alloc_err(10) )
+   deallocate(     zv, stat = alloc_err(11) )
+
+   deallocate(   cphi, stat = alloc_err(13) )
+   deallocate( fedgex, stat = alloc_err(14) )
+   deallocate( fedgey, stat = alloc_err(15) )
+   deallocate( fedgez, stat = alloc_err(16) )
+   deallocate( iepsav, stat = alloc_err(17) )
+   deallocate(iepsavx, stat = alloc_err(18) )
+   deallocate(iepsavy, stat = alloc_err(19) )
+   deallocate(iepsavz, stat = alloc_err(20) )
+
+   deallocate(     xs, stat = alloc_err(30) )
+
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
         alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
         alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
         alloc_err(16)+alloc_err(17)+alloc_err(18)+alloc_err(19)+alloc_err(20)+&
-        alloc_err(21)+alloc_err(22)+alloc_err(23)+alloc_err(24)+alloc_err(25) /= 0 ) then
-      write(6, *) 'PB Bomb in pb_free(): Deallocation aborted', alloc_err(1:25)
+        alloc_err(21)+alloc_err(22)+alloc_err(23)+alloc_err(24)+alloc_err(25)+&
+        alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30) /= 0 ) then
+      write(6, *) 'PB Bomb in pb_free(): Deallocation aborted', alloc_err(1:30)
       call mexit(6, 1)
    end if
+
 
 end subroutine pb_free
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -450,7 +115,6 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
      
    ! Module variables
      
-   use constants, only : INV_AMBER_ELECTROSTATIC
    use poisson_boltzmann
    use solvent_accessibility
    use dispersion_cavity
@@ -519,10 +183,9 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
  
    allocate(   acrd( 3,-1:natom), stat = alloc_err(9 ) )
    allocate(   gcrd( 3,-1:natom), stat = alloc_err(10) )
-
-   allocate(   radi(   -1:-1   ), stat = alloc_err(12) )
-   allocate( radip3(    1: 1   ), stat = alloc_err(15) )
-   allocate( nzratm(    1: 1   ), stat = alloc_err(16) )
+   allocate(   radi(   -1:-1   ), stat = alloc_err(11) )
+   allocate( radip3(    1: 1   ), stat = alloc_err(12) )
+   allocate( nzratm(    1: 1   ), stat = alloc_err(13) )
 
    end if
     
@@ -572,12 +235,12 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
 
    ! atomic and total charge in electron for printing only
        
-   totcrgp = ZERO
-   totcrgn = ZERO
+   totcrgp = 0.0d0
+   totcrgn = 0.0d0
    do iatm = 1, natom
        
-      acrg(iatm) = cg(iatm)*INV_AMBER_ELECTROSTATIC
-      if ( acrg(iatm) > ZERO) then
+      acrg(iatm) = cg(iatm)/18.2223d0
+      if ( acrg(iatm) > 0.0d0) then
          totcrgp = totcrgp + acrg(iatm)
       else
          totcrgn = totcrgn + acrg(iatm)
@@ -622,23 +285,23 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
        
       do iatm = 1, natom
          ic = ico(ntypes*(iac(iatm)-1) + iac(iatm))
-         if (cn2(ic) /= ZERO) then
-            mdsig(iatm) = (cn1(ic)/cn2(ic))**(SIXTH)/2 ! this is sigma
-            rmin(iatm) = mdsig(iatm)*(TWO**(SIXTH)) ! this is Rmin 
+         if (cn2(ic) /= 0.0d0) then
+            mdsig(iatm) = (cn1(ic)/cn2(ic))**(1.0d0/6.0d0)/2 ! this is sigma
+            rmin(iatm) = mdsig(iatm)*(2.0d0**(1.0d0/6.0d0)) ! this is Rmin 
          else
-            mdsig(iatm) = ZERO
-            rmin(iatm) = ZERO
+            mdsig(iatm) = 0.0d0
+            rmin(iatm) = 0.0d0
          endif
       end do
 
       ! cavity radii for polar solvation if not passing in from driver
 
       if ( radiopt == 0 ) then
-         rinchk = ZERO
+         rinchk = 0.0d0
          do iatm = 1, natom
             rinchk = rinchk+rin(iatm)
          end do
-         if (rinchk == ZERO) then
+         if (rinchk == 0.0d0) then
             write(6,*) 'PB Bomb in pb_init(): Requested radi to be read in, but found none'
             call mexit(6,1)
          end if
@@ -679,8 +342,8 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
 
          ! nmax and nexp accumulators
 
-         sumnmax(1:natom) = ZERO
-         sumnexp(1:natom) = ZERO
+         sumnmax(1:natom) = 0.0d0
+         sumnexp(1:natom) = 0.0d0
 
       ! initialization for for vdw surface
 
@@ -688,7 +351,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
          if ( pbverbose ) write(6, *) ' VDW Surface: setting up working radii'
          nsatm = 0
          do iatm = 1, natom
-            if (radi(iatm) == ZERO) cycle
+            if (radi(iatm) == 0.0d0) cycle
             nsatm = nsatm + 1
             nzratm(nsatm) = iatm
             radip3(nsatm) = radi(iatm)
@@ -697,7 +360,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
       end if
 
    else
-      acrd(1:3,-1:0) = ZERO; gcrd(1:3,-1:0) = ZERO
+      acrd(1:3,-1:0) = 0.0d0; gcrd(1:3,-1:0) = 0.0d0
       nsatm = 1
    end if ! if ( ifcap == 0 ) then
 
@@ -760,9 +423,9 @@ subroutine pb_green
       do j = 0, 20
          do k = 0, 20
             if ( i == 0 .and. j == 0 .and. k == 0 ) then
-               green_data = ZERO
+               green_data = 0.0d0
             else
-               green_data = ONE/sqrt( dble(i**2 + j**2 + k**2) )
+               green_data = 1.0d0/sqrt( dble(i**2 + j**2 + k**2) )
             end if
             rdsqr(i, j, k) = green_data
          end do

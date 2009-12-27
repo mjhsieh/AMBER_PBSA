@@ -1,8 +1,7 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
+#include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of direct coulombic and vdw energy and force
@@ -23,6 +22,8 @@ subroutine pb_directnocut( natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1
    _REAL_ cn1(*), cn2(*), cg(natom)
    _REAL_ x(3,natom)
    _REAL_ enb, eel, f(3,natom)
+
+#  include "constants.h"
     
    ! Local variables
     
@@ -497,6 +498,8 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
    _REAL_ cn1pb(*), cn2pb(*), cn3pb(*)
    _REAL_ f(3,natom)
    _REAL_ eel, enb
+
+#  include "constants.h"
     
    ! Local variables
     

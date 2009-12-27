@@ -1,8 +1,7 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "is_copyright.h"
 #include "../include/dprec.fh"
-#include "is_def.h"
+#include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ partition of atoms into internal and external portions
@@ -70,6 +69,8 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
    integer iar1pb(6,0:natom),iprlong(*)
    _REAL_ cutres
    _REAL_ x(3,*)
+
+#  include "constants.h"
      
    ! Local variables
      
@@ -314,6 +315,8 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
    _REAL_ x(3,*), cn1(*), cn2(*), cg(*)
    _REAL_ cn1pb(*), cn2pb(*), cn3pb(*)
    _REAL_ cutnb, cutsa, cutfd
+
+#  include "constants.h"
     
    ! Local variables
     
@@ -467,6 +470,7 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
     
    use poisson_boltzmann
    use solvent_accessibility, only : radi
+
    implicit none
     
    ! Passed variables
@@ -489,29 +493,29 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
    alloc_err(1:32) = 0
    if ( .not. initial ) then
       deallocate(    phi, stat = alloc_err(1 ) )
-      deallocate(   epsx, stat = alloc_err(2 ) )
-      deallocate(   epsy, stat = alloc_err(3 ) )
-      deallocate(   epsz, stat = alloc_err(4 ) )
-      deallocate( iepsav, stat = alloc_err(5 ) )
-      deallocate(  insas, stat = alloc_err(6 ) )
-      deallocate( atmsas, stat = alloc_err(7 ) )
-      !deallocate( fedgex, stat = alloc_err(8 ) )
-      !deallocate( fedgey, stat = alloc_err(9 ) )
-      !deallocate( fedgez, stat = alloc_err(10) )
-      !deallocate( fatomx, stat = alloc_err(11) )
-      !deallocate( fatomy, stat = alloc_err(12) )
-      !deallocate( fatomz, stat = alloc_err(13) )
-      deallocate(    sbv, stat = alloc_err(14) )
-      deallocate(     ad, stat = alloc_err(17) )
-      deallocate(     rd, stat = alloc_err(18) )
-      deallocate(    am1, stat = alloc_err(19) )
-      deallocate(    am2, stat = alloc_err(20) )
-      deallocate(    am3, stat = alloc_err(21) )
-      deallocate(     bv, stat = alloc_err(22) )
-      deallocate(     zv, stat = alloc_err(23) )
-      deallocate(     pv, stat = alloc_err(24) )
-      deallocate(     tv, stat = alloc_err(25) )
-      deallocate(     xs, stat = alloc_err(26) )
+      deallocate(    sbv, stat = alloc_err(2 ) )
+      deallocate(     bv, stat = alloc_err(3 ) )
+      deallocate(   epsx, stat = alloc_err(4 ) )
+      deallocate(   epsy, stat = alloc_err(5 ) )
+      deallocate(   epsz, stat = alloc_err(6 ) )
+      deallocate(     iv, stat = alloc_err(7 ) )
+
+      deallocate(  insas, stat = alloc_err(8 ) )
+      deallocate( atmsas, stat = alloc_err(9 ) )
+      deallocate( lvlset, stat = alloc_err(10) )
+      deallocate(     zv, stat = alloc_err(11) )
+
+      deallocate(   cphi, stat = alloc_err(13) )
+      deallocate( fedgex, stat = alloc_err(14) )
+      deallocate( fedgey, stat = alloc_err(15) )
+      deallocate( fedgez, stat = alloc_err(16) )
+      deallocate( iepsav, stat = alloc_err(17) )
+      deallocate(iepsavx, stat = alloc_err(18) )
+      deallocate(iepsavy, stat = alloc_err(19) )
+      deallocate(iepsavz, stat = alloc_err(20) )
+
+      deallocate(     xs, stat = alloc_err(30) )
+
       if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
            alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
            alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
@@ -522,34 +526,43 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
          call mexit(6, 1)
       end if
    end if
+
+   ! physical constant maps for numerical solutions
+
    allocate(    phi(  1:savxmymzm(nfocus)), stat = alloc_err(1 ) )
-   allocate(   epsx(  1:savxmymzm(nfocus)), stat = alloc_err(2 ) )
-   allocate(   epsy(  1:savxmymzm(nfocus)), stat = alloc_err(3 ) )
-   allocate(   epsz(  1:savxmymzm(nfocus)), stat = alloc_err(4 ) )
-   allocate( iepsav(4,1:savxmymzm(nfocus)), stat = alloc_err(5 ) )
-   allocate(  insas(  1:savxmymzm(nfocus)), stat = alloc_err(6 ) )
-   allocate( atmsas(  1:savxmymzm(nfocus)), stat = alloc_err(7 ) )
-   !allocate( fedgex(2,1:savxmymzm(nfocus)), stat = alloc_err(8 ) )
-   !allocate( fedgey(2,1:savxmymzm(nfocus)), stat = alloc_err(9 ) )
-   !allocate( fedgez(2,1:savxmymzm(nfocus)), stat = alloc_err(10) )
-   !allocate( fatomx(2,1:savxmymzm(nfocus)), stat = alloc_err(11) )
-   !allocate( fatomy(2,1:savxmymzm(nfocus)), stat = alloc_err(12) )
-   !allocate( fatomz(2,1:savxmymzm(nfocus)), stat = alloc_err(13) )
-   allocate(    sbv(  1:savxmymzm(nfocus)), stat = alloc_err(14) )
-   allocate( ad (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(17) )
-   allocate( rd (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(18) )
-   allocate( am1(-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(19) )
-   allocate( am2(-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(20) )
-   allocate( am3(-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(21) )
-   allocate( bv (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(22) )
-   allocate( zv (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(23) )
-   allocate( pv (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(24) )
-   allocate( tv (-savxmym(nfocus):savxmymzm(nfocus)+savxmym(nfocus)         ), stat = alloc_err(25) )
+   allocate(    sbv(  1:savxmymzm(nfocus)), stat = alloc_err(2 ) )
+   allocate(     bv(  1:savxmymzm(nfocus)), stat = alloc_err(3 ) )
+   allocate(   epsx(  1:savxmymzm(nfocus)), stat = alloc_err(4 ) )
+   allocate(   epsy(  1:savxmymzm(nfocus)), stat = alloc_err(5 ) )
+   allocate(   epsz(  1:savxmymzm(nfocus)), stat = alloc_err(6 ) )
+   allocate(     iv(  1:savxmymzm(nfocus)), stat = alloc_err(7 ) )
+
+   ! geometry propery maps for dielectric interface
+
+   allocate(  insas(  1:savxmymzm(nfocus)), stat = alloc_err(8 ) )
+   allocate( atmsas(  1:savxmymzm(nfocus)), stat = alloc_err(9 ) )
+   allocate( lvlset(  1:savxmymzm(nfocus)), stat = alloc_err(10) )
+   allocate(     zv(  1:savxmymzm(nfocus)), stat = alloc_err(11) )
+
+   ! physical property maps for forces
+
+   allocate(   cphi   (1:savxmymzm(nfocus)), stat = alloc_err(13) )
+   allocate( fedgex   (1:savxmymzm(nfocus)), stat = alloc_err(14) )
+   allocate( fedgey   (1:savxmymzm(nfocus)), stat = alloc_err(15) )
+   allocate( fedgez   (1:savxmymzm(nfocus)), stat = alloc_err(16) )
+   allocate( iepsav (4,1:savxmymzm(nfocus)), stat = alloc_err(17) )
+   allocate( iepsavx(4,1:savxmymzm(nfocus)), stat = alloc_err(18) )
+   allocate( iepsavy(4,1:savxmymzm(nfocus)), stat = alloc_err(19) )
+   allocate( iepsavz(4,1:savxmymzm(nfocus)), stat = alloc_err(20) )
+
+   ! the saved phi array for pbmd
+
    totsavxmymzm = 0
    do l = 1, nfocus
-      totsavxmymzm = totsavxmymzm + savxmymzm(l)+savxmym(l)
+      totsavxmymzm = totsavxmymzm + savxmymzm(l)+2*savxmym(l)
    end do
-   allocate( xs (               1:totsavxmymzm                              ), stat = alloc_err(26) )
+   allocate( xs(1:totsavxmymzm), stat = alloc_err(30) )
+
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
         alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
         alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
@@ -562,7 +575,7 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
 
    ! initialize saved phi map
     
-   xs = ZERO
+   xs = 0.0d0
     
    ! save fine grid limits for checking of atom-out-of-grid situation
    
@@ -657,9 +670,16 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
    savxm(1) = nint(xlength/savh(1))
    savym(1) = nint(ylength/savh(1))
    savzm(1) = nint(zlength/savh(1))
-   savxm(1) = 2*nint( REAL(savxm(1))*HALF ) + 1
-   savym(1) = 2*nint( REAL(savym(1))*HALF ) + 1
-   savzm(1) = 2*nint( REAL(savzm(1))*HALF ) + 1
+   if ( solvopt == 2 ) then
+!     if NT-MG and mg_level=4
+      savxm(1) = 16*ceiling( REAL(savxm(1))/16.0 ) - 1
+      savym(1) = 16*ceiling( REAL(savym(1))/16.0 ) - 1
+      savzm(1) = 16*ceiling( REAL(savzm(1))/16.0 ) - 1   
+   else
+      savxm(1) = 2*nint( REAL(savxm(1))*HALF ) + 1
+      savym(1) = 2*nint( REAL(savym(1))*HALF ) + 1
+      savzm(1) = 2*nint( REAL(savzm(1))*HALF ) + 1
+   end if
    savxmym(1) = savxm(1)*savym(1)
    savxmymzm(1) = savxmym(1)*savzm(1)
    if ( verbose .and. prnt ) write(6, '(a,i5,1x,3i5)') &
@@ -695,9 +715,16 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
       savxm(l) = nint( xlength/savh(l) ) + nbuffer
       savym(l) = nint( ylength/savh(l) ) + nbuffer
       savzm(l) = nint( zlength/savh(l) ) + nbuffer
-      savxm(l) = 2*nint( REAL(savxm(l))*HALF ) + 1
-      savym(l) = 2*nint( REAL(savym(l))*HALF ) + 1
-      savzm(l) = 2*nint( REAL(savzm(l))*HALF ) + 1
+      if ( solvopt == 2 ) then
+!        if NT-MG and mg_level=4
+         savxm(l) = 16*ceiling( REAL(savxm(l))/16.0 ) - 1
+         savym(l) = 16*ceiling( REAL(savym(l))/16.0 ) - 1
+         savzm(l) = 16*ceiling( REAL(savzm(l))/16.0 ) - 1   
+      else
+         savxm(l) = 2*nint( REAL(savxm(l))*HALF ) + 1
+         savym(l) = 2*nint( REAL(savym(l))*HALF ) + 1
+         savzm(l) = 2*nint( REAL(savzm(l))*HALF ) + 1
+      end if
       savxmym(l) = savxm(l)*savym(l)
       savxmymzm(l) = savxmym(l)*savzm(l)
       if ( verbose .and. prnt ) write(6, '(a,i5,1x,3i5)') &
@@ -723,9 +750,9 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
    ! do some insanity checking for electrostatic focussing ...
     
    do l = 2, nfocus
-      if (savgox(l)+savxm(l)*savh(l) >= savgox(l-1)+savxm(l-1)*savh(l-1) .or.&
-          savgoy(l)+savym(l)*savh(l) >= savgoy(l-1)+savym(l-1)*savh(l-1) .or.&
-          savgoz(l)+savzm(l)*savh(l) >= savgoz(l-1)+savzm(l-1)*savh(l-1) ) then
+      if (savgox(l)+(savxm(l)+1)*savh(l) > savgox(l-1)+savxm(l-1)*savh(l-1) .or.&
+          savgoy(l)+(savym(l)+1)*savh(l) > savgoy(l-1)+savym(l-1)*savh(l-1) .or.&
+          savgoz(l)+(savzm(l)+1)*savh(l) > savgoz(l-1)+savzm(l-1)*savh(l-1) ) then
          write(6, '(a,i5)') 'PB Bomb in setgrd(): focusing grid too large', l
          write(6, '(a,f6.3)') 'reset fillratio to a larger number', fillratio
          call mexit(6,1)
@@ -734,7 +761,7 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
     
    ! if requested offseting grid, do it here
     
-   if ( offx + offy + offz /= ZERO ) then
+   if ( offx + offy + offz /= 0.0d0 ) then
       do l = 1, nfocus
          savgox(l) = savgox(l) + offx
          savgoy(l) = savgoy(l) + offy
