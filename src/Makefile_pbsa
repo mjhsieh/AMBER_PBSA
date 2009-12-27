@@ -1,0 +1,48 @@
+#   top-level $(MAKE)file for the AmberTools suite of programs
+AMBERTOOLS=PBSA
+CONFIG_FILE=config.h
+CONFIG_COMMAND=./configure
+PARALLEL_TOKEN=DMPI
+
+include $(CONFIG_FILE)
+
+install: serial
+
+serial: configured_serial
+	@echo "Starting installation of ${AMBERTOOLS} at `date`".
+	(cd pbsa && $(MAKE) install )
+	@echo ""
+	@echo "Installation of ${AMBERTOOLS} is complete at `date`."
+	@echo ""
+
+configured_serial: configured
+	@(if grep $(PARALLEL_TOKEN) $(CONFIG_FILE) > /dev/null ; then \
+		echo "Error: $(CONFIG_FILE) is of type parallel, not serial !" ;\
+		echo "  Rerun $(CONFIG_COMMAND) without the -mpi flag." ;\
+		exit 2 ;\
+	fi ;\
+	)
+
+clean:
+	(cd blas && $(MAKE) clean )
+	(cd lapack && $(MAKE) clean )
+	(cd pbsa && $(MAKE) clean )
+	(cd lib && $(MAKE) clean )
+
+realclean: clean uninstall_libraries
+
+distclean: realclean
+	-cd ../test && $(MAKE) -f Makefile_pbsa distclean
+	-/bin/rm -f config.h
+
+superclean: uninstall distclean
+
+uninstall: uninstall_libraries
+	(cd blas && $(MAKE) uninstall )
+	(cd lapack && $(MAKE) uninstall )
+	(cd pbsa && $(MAKE) uninstall )
+	(cd lib && $(MAKE) -f Makefile_at uninstall )
+
+uninstall_libraries:
+	(cd ../lib && rm -f libnab.a libsff.a cifparse.a libpdb.a carpack.a \
+              cblas.a clapack.a blas.a lapack.a f2c.a libsym.a libfftw3.a)

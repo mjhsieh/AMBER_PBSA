@@ -28,3 +28,7 @@ clean:
 	done ;\
 	)
 	/bin/rm -f TEST_FAILURES.diff
+
+realclean: clean
+distclean: realclean
+superclean: distclean
