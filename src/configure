@@ -667,7 +667,7 @@ elif [ "$macAccelerate" = "yes" -a "$mkl" = "no" ] ; then
     flibs_arch="-framework Accelerate"
 elif [ "$macAccelerate" = "yes" -a "$mkl" = "yes" ] ; then
     echo "MKL setting presence disables -macAccelerate."
-    macAccelerate='yes'
+    macAccelerate='no'
 fi
 
 #--------------------------------------------------------------------------
