@@ -1,0 +1,1167 @@
+#!/bin/sh 
+#set -xv
+
+command="$0 $*"
+
+# configure script for Amber and AmberTools: creates config.h
+
+#------------------------------------------------------------------------------
+#  set up usage statement:
+#------------------------------------------------------------------------------
+usage(){
+cat<<EOD
+
+Usage: ./configure [flags] compiler
+
+    where compiler is one of:
+
+        gnu (=gcc/gfortran), intel (=icc/ifort), pgi (=pgcc/pgf90),
+        solaris (=cc/f90)
+
+    Optional flags:
+      -mpi        Use MPI for parallelization; assumes mpicc is in your PATH;
+                  (Note: you must first configure and build a serial AmberTools)
+      -openmp     Use OpenMP pragmas to parallelize (not available for pgi;
+                  only affects NAB and sander QM/MM. For NAB, do not set
+                  -openmp and -mpi at the same time.)
+      -cygwin     Modifications for cygwin/windows
+      -static     Create statically linked executables (not recommended for
+                  MacOSX; may not work with some versions of MPI)
+      -noX11      Do not build programs that require X11 libraries, e.g. xleap
+      -nobintraj  Do not include support for binary (NetCDF) trajectory files
+      -nosleap    Do not build sleap, which requires unantiquated compilers
+      -3drism     Include support for 3D-RISM in sander
+      -oldmkl     Set this if you are using MKL version 9 or earlier
+      -sanderidc  Include support for IDC>0 (divcon) in Sander
+      -nosse      Do not optimize for the SSE family of vectorizations
+      -altix      Use optimizations specific for the SGI Altix with intel
+      -nolfs      Remove compile flags for Large File Support
+      -g95        Use g95 instead of gfortran when choosing gnu compilers
+      -macAccelerate Use optimized blas/lapack bundled with Mac OS X
+      -crayxt5    Use the compiler wrappers for Cray XT5 systems (cc, CC, ftn)
+
+    Rarely used/tested NAB options:
+      -scalapack  Use ScaLAPACK for linear algebra (don't specify -mpi as well)
+      -noreduce   Avoid reduction under OpenMP
+      -logreduce  Perform logarithmic reduction under OpenMP
+      -nopar      Do not parallelize 1-2, 1-3 and 1-4 calculations via OpenMP
+      -scali      Use Scali MPI option in lieu of Solaris HPC MPI
+      -opteron    Options for Solaris AMD Opteron
+      -perflib    Use Solaris performance library in lieu of LAPACK and BLAS
+      -bit64      64-bit compilation for Solaris
+
+    Environment variables:
+      MKL_HOME    If present, will link in Intel's MKL libraries (icc,gcc)
+      GOTO        If present, and MKL_HOME is not set, will use this location
+                  for the Goto BLAS routines
+      SSE_TYPES   CPU types for which auto-dispatch code will be produced (Intel
+                  compilers version 11 and higher). Known valid options are
+                  SSE2, SSE3, SSSE3, SSE4.1 and SSE4.2. Multiple options (comma
+                  separated) are permitted.
+
+===========================================================
+EOD
+
+exit 1;
+}
+
+# Test for the presence of /bin/csh, since it's needed for installation
+
+if [ ! -x /bin/csh ]; then
+    echo "Error: /bin/csh not found on your system! Install (t)csh and rerun configure."
+    exit 1
+fi
+
+#------------------------------------------------------------------------------
+#  Process commandline configuration options:
+#------------------------------------------------------------------------------
+mpi='no'
+scali='no'
+scalapack='no'
+openmp='no'
+noreduce='no'
+logreduce='no'
+nopar='no'
+opteron='no'
+perflib='no'
+bit64='no'
+altix='no'
+sse='yes'
+gotolib='no'
+compiler='gcc'
+processor=`uname -m`
+os=`uname -sr | awk -F . '{print $1}'`
+static='no'
+gnucompat='no'
+oldmkl='no'
+ar='ar rv $(EMPTY)'
+ranlib=ranlib
+suffix=''
+cygwin='no'
+hasfc='no'
+noX11='false'
+nosleap='false'
+bintraj='yes'
+lfs='yes'
+sanderidc='no'
+libdivcon=''
+incdivcon=''
+testsanderdivcon='skipsanderDIVCON'
+moduledir='-I'
+rism='no'
+make_xleap='install_xleap'
+build_sleap='install_sleap'
+lm='-lm'
+m4='m4'
+ldflags=''
+fpp="cpp -traditional"
+fppflags="-P "
+freeformat_flag=''
+mdgx='no'
+g95='no'
+macAccelerate='no'
+gnuld='yes'
+crayxt5='no'
+
+#------------------------------------------------------------------------------
+#  Architecture specific: 
+#------------------------------------------------------------------------------
+if [ "$processor" = "em64t" -o "$processor" = "x86_64" ] ; then
+    x86_64='yes'
+else
+    x86_64='no'
+fi
+
+#------------------------------------------------------------------------------
+#  Checking Arguments:
+#------------------------------------------------------------------------------
+if [ $# -lt 1 ]; then usage; fi
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -mpi)          mpi="yes" ;;
+        -scali)        scali="yes" ;;
+        -scalapack)    scalapack="yes" ;;
+        -openmp)       openmp="yes" ;;
+        -noreduce)     noreduce="yes" ;;
+        -logreduce)    logreduce="yes" ;;
+        -nopar)        nopar="yes" ;;
+        -opteron)      opteron="yes" ;;
+        -bit64)        bit64="yes" ;;
+        -perflib)      perflib="yes" ;;
+        -altix)        altix="yes" ;;
+        -cygwin)       cygwin="yes"; lfs="no";  ;;
+        -nosse)        sse="no";;
+        -nolfs)        lfs="no";;
+        -static)       static="yes";;
+        -noX11)        noX11="true";;
+        -nobintraj)    bintraj="no" ;;
+        -sanderidc)    sanderidc="yes" ;;
+        -nosleap)      nosleap="true";;
+        -3drism)       rism="yes";;
+        -oldmkl)       oldmkl="yes";;
+        -g95)          g95="yes"; openmp="no"; ;;
+        -macAccelerate) macAccelerate="yes";;
+        -crayxt5)      crayxt5="yes";;
+        -help)         usage;;
+        --help)         usage;;
+
+        -*) echo "Error unknown flag: $1"
+            echo "    Type './configure -help' for options."
+            exit 1;;
+
+        *) if [ $# -gt 1 ]; then
+             echo "Error unknown compiler: $1"
+             echo "    Type './configure -help' for options."
+             exit 1
+           fi
+
+           compiler=$1 ;;
+    esac
+    shift
+done
+
+#-------------------------------------------------------------------------------
+#  Platform specific:
+#-------------------------------------------------------------------------------
+if [ `uname -s|awk '{print $1}'` = "Darwin" ]; then
+    static="no"
+    osx_version=`sw_vers -productVersion | awk '{print $1}'`
+    case "$osx_version" in
+    *10\.6*)
+        x86_64=yes ;;
+    *) ;;
+    esac
+else
+    echo "This is not a Macintosh, disabling -macAccelerate."
+    macAccelerate="no"
+fi
+
+ld_version=`ld -v 2>&1 | awk '{print $1}'`
+case "$ld_version" in
+    *GNU*)
+        gnuld='yes';;
+    *)
+        gnuld='no' ;;
+esac
+
+#------------------------------------------------------------------------------
+#  Set up defaults that work for most machines:
+#------------------------------------------------------------------------------
+
+workdir=`pwd`
+AMBERHOME=`dirname $workdir`
+echo "Setting AMBERHOME to $AMBERHOME"
+echo " "
+
+if [ -z "$MKL_HOME" ]; then
+    mkl='no'
+    if [ -z "$GOTO" ]; then
+        gotolib='no'
+    else
+        gotolib='yes'
+        echo "Using Goto BLAS routines in $GOTO"
+    fi
+else
+    mkl='yes'
+fi
+
+cc=cc
+cplusplus=CC
+cflags=
+ocflags=-O
+nabflags=
+free_format=-FR
+#  C versions, if compiled from source:
+flibs="\$(LIBDIR)/carpack.a \$(LIBDIR)/clapack.a \$(LIBDIR)/cblas.a \$(LIBDIR)/f2c.a"
+#  Fortran versions, if compiled from source:
+flibsf="\$(LIBDIR)/carpack.a \$(LIBDIR)/lapack.a \$(LIBDIR)/blas.a \$(LIBDIR)/f2c.a"
+omp_flag=
+mpi_flag=
+lex=flex
+flibs_mkl=
+flibs_goto=
+lapack=install
+blas=install
+f2c=install
+ucpp=install
+cpp="\$(BINDIR)/ucpp -l"
+
+#------------------------------------------------------------------------------
+#  Local Overrides
+#------------------------------------------------------------------------------
+if [ -e 'configure_override' ]; then
+   . configure_override
+fi
+
+#-----------------------------------
+# skip building of sleap?
+#-----------------------------------
+if [ "$nosleap" = "true" ]; then
+    build_sleap="skip_sleap"
+fi
+
+#-----------------------------------
+# skip building of xleap?
+#-----------------------------------
+if [ "$noX11" = "true" ]; then
+    make_xleap="skip_xleap"
+fi
+
+if [ -d /usr/X11R6/lib ]; then
+    xhome='/usr/X11R6'
+elif [ -f /usr/lib/libX11.a -o -f /usr/lib/libX11.so \
+       -o -f /usr/lib64/libX11.a -o -f /usr/lib64/libX11.so ]; then
+    xhome='/usr'
+else
+    echo "Could not find the X11 libraries; you may need to edit config.h"
+    echo "   to set the XHOME and XLIBS variables."
+fi
+
+xlibs="-L$xhome/lib"
+if [ "$x86_64" = "yes" ]; then
+    xlibs="-L$xhome/lib64 $xlibs"
+fi
+
+#--------------------------------------------------------------------------
+#  Check if the X11 library files for XLEaP are present:
+#--------------------------------------------------------------------------
+if [ "$noX11" = "false" ]; then
+    if [ -r "$xhome/lib/libXt.a"  -o -r "$xhome/lib/libXt.dll.a" \
+         -o -r /usr/lib/libXt.so \
+         -o -r /usr/lib64/libXt.so \
+         -o -r /usr/X11/lib/libXt.dylib \
+         -o "$x86_64" = 'yes' -a -r "$xhome/lib64/libXt.a" ]
+    then
+        empty_statement=
+    else
+        echo "Warning: the X11 libraries are not in the usual location !"
+        echo "    To search for them try the command: locate libXt"
+        echo "    On new Fedora OS's install the libXt-devel libXext-devel"
+        echo "    libX11-devel libICE-devel libSM-devel packages."
+        echo "    On old Fedora OS's install the xorg-x11-devel package."
+        echo "    On RedHat OS's install the XFree86-devel package."
+        echo "    On Ubuntu OS's install the xorg-dev package."
+        echo "    For the moment Amber will be configured not to build XLEaP."
+        make_xleap="skip_xleap"
+    fi
+fi
+
+#------------------------------------------------------------------------------
+#  Abort an attempted parallel configure if serial installation is not
+#  present:
+#------------------------------------------------------------------------------
+
+if [ "$mpi" = "yes" ]; then
+    if [ ! -x ../bin/yacc ]; then
+        echo "Error: you must configure and install the serial version of "
+        echo "    AmberTools before doing a parallel install!"
+        exit 1
+    fi
+fi
+
+#------------------------------------------------------------------------------
+#  Case statement identifying the architecture/compilers:
+#------------------------------------------------------------------------------
+
+case "$compiler" in
+
+#################### gcc #######
+gnu)
+    flibs_arch=
+    cc=gcc
+    cplusplus=g++
+    ocflags=-O3
+    fc=gfortran
+    fflags=-O0
+    foptflags=-O3
+    staticflag='-static'
+
+    echo ""
+    echo "Obtaining the gnu suite version:"
+    echo "      $cc -v"
+    gnu_version=`$cc -v 2>&1 | grep ' version ' | cut -d' ' -f3`
+    echo "The version is $gnu_version"
+    gnu_majorversion=`echo $gnu_version | cut -d'.' -f1`
+    gnu_minorversion=`echo $gnu_version | cut -d'.' -f2`
+
+    # Only use -mtune=generic if gcc suite  >= 4.2
+    if [ $gnu_majorversion -ge 4 -a $gnu_minorversion -ge 2 ]; then
+      if [ $sse = "yes" ]; then
+        if [ $x86_64 = "yes" ]; then
+          #-mfpmath=sse is default for x86_64, no need to specific it
+          ocflags="$ocflags -mtune=generic" 
+          foptflags="$foptflags -mtune=generic"
+        elif [ "$processor" =  "ia64" ]; then
+          echo "Using simplified compilers flags for ia64: check config.h"
+        else # i386 needs to be told to use sse prior to using -mfpmath=sse
+          ocflags="$ocflags -mtune=generic -msse -mfpmath=sse"
+          foptflags="$foptflags -mtune=generic -msse -mfpmath=sse"
+        fi
+      fi
+    fi
+
+    if [ "$g95" = "yes" ]; then
+       fc="g95"
+       fflags="-O0 -fno-second-underscore"
+       foptflags="-O3 -fno-second-underscore"
+    fi
+
+    if [ "$openmp" = "yes" ]; then
+        omp_flag="-fopenmp -DOPENMP"
+        flibs_arch="$flibs_arch -fopenmp"
+    fi
+
+    if [ "$noreduce" = "yes" ]; then
+        omp_flag="$omp_flag -DNOREDUCE"
+    fi
+
+    if [ "$nopar" = "yes" ]; then
+        omp_flag="$omp_flag -DNOPAR"
+    fi
+
+    if [ "$cygwin" = "yes" ]; then
+        cflags="$cflags -DCYGWIN"
+        ocflags="$ocflags -DCYGWIN"
+        suffix=".exe"
+        lm=""
+    fi
+
+    freeformat_flag=-ffree-form
+
+    ;;
+
+#################### icc #######
+intel)
+    flibs_arch=
+    cc=icc
+    cplusplus=icpc
+    ocflags=-O2
+    fc=ifort
+    fflags=-O0
+    foptflags='-ip -O3'
+    freeformat_flag='-FR'
+    staticflag='-static'
+    
+    # Test Intel compiler versions for optimisation flags. Note that the
+    # output of "icc -v" goes onto STDERR.
+    # C compiler version
+    icc_version=`$cc -v 2>&1`
+    icc_version=`echo $icc_version | sed -e 's/\..*//g' | sed -e 's/^Version //'`
+
+    # Test Intel compiler versions for optimisation flags. Note that the
+    # output of "ifort -v" goes onto STDERR.
+    # C compiler version
+    ifort_version=`$fc -v 2>&1`
+    ifort_version=`echo $ifort_version | sed -e 's/\..*//g' | sed -e 's/^Version //'`
+    
+    # Add optimisations for current machine type
+    if [ $icc_version -ge 11 ] ; then
+        ocflags="$ocflags -xHost"
+    fi
+    if [ $ifort_version -ge 11 ] ; then
+        foptflags="$foptflags -xHost"
+    fi
+
+    if [ "$openmp" = "yes" ]; then
+        omp_flag="-openmp -DOPENMP"
+        flibs_arch="$flibs_arch -openmp"
+    fi
+
+    if [ "$noreduce" = "yes" ]; then
+        omp_flag="$omp_flag -DNOREDUCE"
+    fi
+
+    if [ "$nopar" = "yes" ]; then
+        omp_flag="$omp_flag -DNOPAR"
+    fi
+
+    if [ "$sse" = "yes" ]; then
+        # Preface $ocflags with -ip
+        ocflags="-ip $ocflags"
+        # Within ocflags, use -O3
+        ocflags=`echo $ocflags | sed -e 's/ -O[012] / -O3 /g'`
+        
+        # For both ocflags and foptflags, use the appropriate settings
+        # for the sse flags (compiler version dependent).
+        if [ $icc_version -ge 11 ] ; then
+            if [ -n "$SSE_TYPES" ] ; then
+                ocflags="$ocflags -ax$SSE_TYPES"
+            fi
+        else
+            ocflags="$ocflags -axSTPW"
+        fi
+        
+        if [ $ifort_version -ge 11 ] ; then
+            if [ -n "$SSE_TYPES" ] ; then
+                foptflags="$foptflags -ax$SSE_TYPES"
+            fi
+        else
+            foptflags="$foptflags -axSTPW"
+        fi
+        
+        flibs_arch="$flibs_arch -lsvml"
+    fi
+
+    if [ "$altix" = "yes" ]; then
+        cpp="/usr/bin/cpp -P "
+        ucpp=skip
+        cc=icc
+        ocflags=-O3
+        flibs_arch="$flibs_arch -lguide -lpthread -ldl"
+    fi
+
+    ;;
+
+#################### pgcc #######
+pgi)
+    flibs_arch=
+    cc=pgcc
+    cplusplus=pgCC
+    ocflags=-O2
+    fc=pgf90
+    fflags=-O1
+    foptflags='-fast -O3'
+    freeformat_flag='-Mfree'
+    staticflag='-Bstatic'
+
+    if [ "$openmp" = "yes" ]; then
+        echo "Warning: OpenMP is not available for pgi."
+        # omp_flag="-mp -DOPENMP"
+        # flibs_arch="$flibs_arch -mp"
+    fi
+
+    if [ "$noreduce" = "yes" ]; then
+        echo "Warning: OpenMP is not available for pgi."
+        # omp_flag="$omp_flag -DNOREDUCE"
+    fi
+
+    if [ "$nopar" = "yes" ]; then
+        echo "Warning: OpenMP is not available for pgi."
+        # omp_flag="$omp_flag -DNOPAR"
+    fi
+
+    if [ "$sse" = "yes" ]; then
+        foptflags="$foptflags -fastsse"
+    fi
+
+    ;;
+
+#################### solaris #######
+solaris)
+    lex=lex
+    cc="cc -fast"
+    cflags="-DSYSV"
+    ocflags="-DSUN -DSYSV"
+    fc="f90 -fast"
+
+# solaris 5.9 required -lfsu -lfui -lfai but solaris 5.10 does not.
+
+    flibs_arch="-lsunmath -lm"
+
+# safest optimization level for x86 is -xO3
+
+    if [ "$opteron" = "yes" ]; then
+        cc="cc -fast -xtarget=opteron"
+        fc="f90 -fast -xtarget=opteron"
+        cflags="-DSYSV"
+        ocflags="-DSUN -DSYSV"
+    fi
+
+    if [ "$bit64" = "yes" ]; then
+        cc="$cc -m64"
+        fc="$f90 -m64"
+    fi
+
+    if [ "$perflib" = "yes" ]; then
+        flibs_arch="-xlic_lib=sunperf"
+        lapack=skip
+        blas=skip
+    fi
+
+    if [ "$openmp" = "yes" ]; then
+        omp_flag="-xopenmp=parallel -xautopar -xreduction -DOPENMP"
+        flibs_arch="$flibs_arch -lmtmalloc"
+    fi
+
+    if [ "$noreduce" = "yes" ]; then
+        omp_flag="$omp_flag -DNOREDUCE"
+    fi
+
+    if [ "$logreduce" = "yes" ]; then
+        omp_flag="$omp_flag -DLOGARITHMIC_REDUCTION"
+    fi
+
+    if [ "$nopar" = "yes" ]; then
+        omp_flag="$omp_flag -DNOPAR"
+    fi
+
+    if [ "$mpi" = "yes" ]; then
+        cc="mpi$cc"
+        fc="mpi$fc"
+        mpi_flag="-DMPI"
+        flibs_arch="$flibs_arch -lmpi"
+    fi
+
+    if [ "$scali" = "yes" ]; then
+        cc="$SCALIHOME/bin/mpicc -ccl cc -fast -m64"
+        fc="$SCALIHOME/bin/mpif77 -ccl f90 -fast -m64"
+        flibs_arch="$flibs_arch -L/$SCALIHOME/lib/64 -lfmpi -lmpi"
+        mpi_flag="-DMPI"
+    fi
+
+    if [ "$scalapack" = "yes" ]; then
+        cc="mpi$cc"
+        fc="mpi$fc"
+        mpi_flag="-DSCALAPACK"
+
+# The names of these archives are determined by PLAT and BLACSDBGLVL,
+# which are defined in Bmake.inc and SLmake.inc
+
+        flibs_arch="$flibs_arch $SCALAPACKHOME/scalapack_SUN64.a $BLACSHOME/blacsF77init_MPI-SUN64-0.a $BLACSHOME/blacs_MPI-SUN64-0.a $BLACSHOME/blacsCinit_MPI-SUN64-0.a -lmpi"
+    fi
+
+    ;;
+
+#################### unknown choice #######
+*)
+    echo "Error: Architecture/compiler $compiler is not supported!"
+    echo "    Type './configure -help' for options."
+    exit 1
+    ;;
+
+esac
+
+# If -crayxt5 was specified, switch to cc, CC, and ftn compiler wrappers
+if [ "$crayxt5" = "yes" ]; then
+    cc="cc"
+    cplusplus="CC"
+    fc="ftn"
+fi
+
+#--------------------------------------------------------------------------
+#  Configure the MKL and GOTO libraries:
+#--------------------------------------------------------------------------
+
+if [ "$mkl" = "yes" ]; then
+    lapack=skip
+    blas=skip
+    flibs="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
+    flibsf="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
+    mkll="$MKL_HOME/lib/32"
+    mklinterfacelayer='libmkl_intel.a'
+    if [ "$x86_64" = "yes" ]; then
+        mkll="$MKL_HOME/lib/em64t"
+        # lp64 is 32 bit integers on 64 bit platforms
+        mklinterfacelayer='libmkl_intel_lp64.a'
+    fi
+    if [ "$processor" = "ia64" ]; then
+        mkll="$MKL_HOME/lib/64"
+        mklinterfacelayer='libmkl_intel_lp64.a'
+    fi
+    echo "Using Intel MKL libraries in $mkll"
+
+    if [ "$oldmkl" = "yes" ]; then
+        echo "MKL Version 9.x or earlier assumed."
+
+        # Always link static version of MKL - just easier from an end
+        # user perspective.
+
+        flibs_mkl="$mkll/libmkl_lapack.a $mkll/libmkl_ia32.a -L$mkll -lguide -lpthread"
+
+    elif [ "$gnuld" = "yes" ]; then
+        echo "MKL Version 10 or 11 assumed."
+
+        # We always link to the sequential version of MKL since typically
+        # one runs an MPI thread for each core.  However, if openmp is
+        # specified, for example to turn on SMP diagonalizers for QMMM
+        # then we link to the threaded version of MKL and inside the code
+        # the number of threads for vector functions etc will be set to
+        # 1.  Always link static version of MKL - just easier from an end
+        # user perspective.
+
+        if [ "$openmp" = "yes" ]; then
+          flibs_mkl="-L$mkll -Wl,--start-group $mkll/$mklinterfacelayer $mkll/libmkl_intel_thread.a $mkll/libmkl_core.a -Wl,--end-group -lpthread"
+        else
+          flibs_mkl="-L$mkll -Wl,--start-group $mkll/$mklinterfacelayer $mkll/libmkl_sequential.a $mkll/libmkl_core.a -Wl,--end-group -lpthread"
+        fi
+    else
+        echo "Non-GNU linker assumed."
+        if [ "$openmp" = "yes" ]; then
+          flibs_mkl="-L$mkll $mkll/$mklinterfacelayer $mkll/libmkl_intel_thread.a $mkll/libmkl_core.a -lpthread"
+        else
+          flibs_mkl="-L$mkll $mkll/$mklinterfacelayer $mkll/libmkl_sequential.a $mkll/libmkl_core.a -lpthread"
+        fi
+    fi
+fi
+
+if [ "$gotolib" = "yes" ]; then
+    lapack=install
+    blas=skip
+    flibs="\$(LIBDIR)/carpack.a \$(LIBDIR)/clapack.a \$(LIBDIR)/f2c.a"
+    flibsf="\$(LIBDIR)/carpack.a \$(LIBDIR)/lapack.a \$(LIBDIR)/f2c.a"
+    flibs_goto="$GOTO -lpthread"
+elif [ "$macAccelerate" = "yes" -a "$mkl" = "no" ] ; then
+    lapack=skip
+    blas=skip
+    flibs="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
+    flibsf="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
+    flibs_arch="-framework Accelerate"
+elif [ "$macAccelerate" = "yes" -a "$mkl" = "yes" ] ; then
+    echo "MKL setting presence disables -macAccelerate."
+    macAccelerate='yes'
+fi
+
+#--------------------------------------------------------------------------
+#  Support platforms without a C <complex.h> by building c9x-complex.
+#--------------------------------------------------------------------------
+
+if [ -r /usr/include/complex.h ]; then
+    c9xcomplex='skip'
+else
+    c9xcomplex='libmc.a'
+    cflags="$cflags -DUSE_AMBER_C9XCOMPLEX"
+    ocflags="$ocflags -DUSE_AMBER_C9XCOMPLEX"
+    flibs_arch="$flibs_arch \$(LIBDIR)/libmc.a"
+fi
+
+#--------------------------------------------------------------------------
+#  Support platforms without <sys/dir.h> but with <dirent.h>
+#  usually a non-Linux Unix with a non-native compiler.
+#--------------------------------------------------------------------------
+
+if [ ! -r /usr/include/sys/dir.h  -a -r /usr/include/dirent.h ]; then
+    if [ "$cygwin" = 'yes' ]; then
+       # We do *NOT* add this if we are using cygwin.
+       cflags="$cflags"
+       ocflags="$ocflags"
+    else
+       cflags="$cflags -DSYSV"
+       ocflags="$ocflags -DSYSV"
+    fi
+fi
+
+#--------------------------------------------------------------------------
+#  Check for large file support:
+#--------------------------------------------------------------------------
+if [ "$lfs" = "yes" ]; then
+    cflags="$cflags -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
+    ocflags="$ocflags -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
+fi
+
+#--------------------------------------------------------------------------
+#  Test if the C compiler works:
+#--------------------------------------------------------------------------
+
+cat <<EOF >testp.c
+#include <stdio.h>
+int main()
+{
+   printf( "testing a C program\n" );
+}
+EOF
+
+echo ""
+echo "Testing the $cc compiler:"
+echo "     $cc $cflags -o testp$suffix testp.c"
+$cc $cflags -o testp$suffix testp.c
+./testp | grep "testing a C program" > /dev/null
+status=$?
+
+if [ $status -gt 0 ]; then
+    echo "Error: Unable to compile a C program using $cc $cflags"
+    echo "    Please check your compiler settings or configure flags."
+    exit 1
+fi
+/bin/rm -f testp.c testp.o testp$suffix
+echo "OK"
+    
+#--------------------------------------------------------------------------
+#  Check if the C++ compiler is recent enough for sleap:
+#--------------------------------------------------------------------------
+if [ "$nosleap" = "false" ]; then
+    if [ "$cplusplus" = 'g++' ]
+    then
+        echo ""
+        echo "Validating the C++ compiler version:"
+        echo "     $cplusplus -v"
+        version=`$cplusplus -v 2>&1 | grep ' version ' | cut -d' ' -f3`
+        echo "The version is $version"
+        majorversion=`echo $version | cut -d'.' -f1`
+        minorversion=`echo $version | cut -d'.' -f2`
+        # The oldest version known to build sleap is 3.2.3.
+        # But we are leaving the threshold at 3.1 since we expect that to work.
+        if [ $majorversion -lt 3 -o $majorversion -eq 3 -a $minorversion -lt 1 ]
+        then
+            echo "Warning: the C++ compiler is too old to build sleap !"
+            echo "    Upgrade your compiler."
+            echo "    See http://gcc.gnu.org/releases.html for the timeline."
+            echo "    For the moment Amber will be configured not to build sleap."
+            build_sleap="skip_sleap"
+        else
+            echo "OK"
+        fi
+    fi
+fi
+
+#--------------------------------------------------------------------------
+#  Test if the Fortran compiler works:
+#--------------------------------------------------------------------------
+
+cat <<EOF >testp.f
+      program testf
+      write(6,*) 'testing a Fortran program'
+      end program testf
+EOF
+
+echo ""
+echo "Testing the $fc compiler:"
+echo "     $fc $fflags -o testp$suffix testp.f"
+$fc $fflags -o testp testp.f
+./testp | grep "testing a Fortran program" > /dev/null
+status=$?
+
+if [ $status -gt 0 ]; then
+    echo "Unable to compile a Fortran program using $fc $fflags"
+    echo "We will be unable to compile sqm"
+else
+    hasfc='yes'
+    echo "OK"
+fi
+/bin/rm -f testp.f testp.o testp$suffix
+
+#--------------------------------------------------------------------------
+#  Test if lex/flex is available and works
+#--------------------------------------------------------------------------
+
+echo ""
+echo "Testing $lex:"
+cat <<EOF >testp.l
+%{
+
+
+%}
+%%
+
+ddm[=\ ][^\ \n\t,]+         { ECHO; ddm = 1;}
+
+%%
+EOF
+
+$lex -t testp.l | grep ddm  > /dev/null
+status=$?
+
+if [ $status -gt 0 ]; then
+    echo "Unable to run $lex; this is recommended for NAB"
+    echo "Please check your PATH, or install the program"
+    echo ""
+    if [ "$lex" = "flex" ]; then
+        echo "We will try to solider on with precompiled files"
+        echo ""
+        cd nab/lexc; cp lex.*.c ..; cd ../..
+    else
+        exit 1
+    fi
+else
+    echo "OK"
+fi
+/bin/rm -f testp.l
+
+#--------------------------------------------------------------------------
+#  Check for divcon support in sander:
+#--------------------------------------------------------------------------
+if [ "$sanderidc" = "yes" ]; then
+    libdivcon='../dcqtp/src/qmmm/libdivcon.a'
+    incdivcon='divcon'
+    testsanderdivcon='test.sander.DIVCON'
+else
+    fppflags="$fppflags -DNO_SANDER_DIVCON"
+fi
+
+#------------------------------------------------------------------------------
+#  Set up the static flags:
+#------------------------------------------------------------------------------
+if [ "$static" = "yes" ]; then
+    flibs="$flibs $staticflag"
+    ldflags="$staticflag"
+fi
+   
+#--------------------------------------------------------------------------
+#  Configure NetCDF
+#--------------------------------------------------------------------------
+if [ "$bintraj" = "yes" ]; then
+
+    #Parallel NetCDF?
+    if [ "$mpi" = "yes" ]; then
+        echo
+        echo "Configuring Parallel NetCDF; (may be time-consuming)"
+        echo
+        cd pnetcdf
+        netcdfflag="--prefix=$AMBERHOME/src/pnetcdf --disable-cxx --disable-fortran" 
+        if [ "$crayxt5" = "yes" ]; then
+            pnetcc="cc"
+        else
+            pnetcc="mpicc"
+        fi
+        case "$compiler" in
+        pgi*)
+            env CC="$pnetcc" LDFLAGS="$ldflags" \
+                CFLAGS="$cflags" CPPFLAGS="-DNDEBUG -DpgiFortran" ./configure \
+                $netcdfflag > ../../netcdf_config.log 2>&1
+            ;;
+        *)
+            env CC="$pnetcc" LDFLAGS="$ldflags" \
+                CFLAGS="$cflags" CPPFLAGS="-DNDEBUG" ./configure $netcdfflag \
+                > ../../netcdf_config.log 2>&1
+            ;;
+        esac
+        ncerror=$?
+        if [ $ncerror -gt 0 ]; then
+            echo "    Error: parallel NetCDF configure returned $ncerror"
+            echo "    Parallel NetCDF configure failed!  Check the pnetcdf/config.log file."
+            echo "    Continuing but parallel NetCDF will be skipped."
+            pnetcdf='no'
+            pnetcdflib=''
+        else
+            echo "    Parallel NetCDF configure succeeded."
+            pnetcdf='yes'
+            pnetcdflib='../pnetcdf/lib/libpnetcdf.a'
+            cflags="$cflags -DBINTRAJ"
+            ocflags="$ocflags -DBINTRAJ"
+            fppflags="$fppflags -DBINTRAJ"
+        fi
+        cd ../
+
+    else
+
+        pnetcdf='no'
+        pnetcdflib=''
+        echo
+        echo "Configuring NetCDF; (may be time-consuming)"
+        echo
+        cd netcdf/src 
+        netcdfflag="--prefix=$AMBERHOME/src/netcdf --disable-cxx"
+        case "$compiler" in
+        pgi*)
+            env FC="$fc" F90="$fc" FFLAGS="$ldflags $foptflags" \
+                F90FLAGS="$ldflags $foptflags" CC="$cc" LDFLAGS="$ldflags" \
+                CFLAGS="$cflags" CXX="$cplusplus" CPPFLAGS="-DNDEBUG -DpgiFortran" \
+                ./configure $netcdfflag > ../../netcdf_config.log 2>&1
+            ;;
+        *)
+            env FC="$fc" F90="$fc" FFLAGS="$ldflags $foptflags" \
+                F90FLAGS="$ldflags $foptflags" CC="$cc" LDFLAGS="$ldflags" \
+                CFLAGS="$cflags" CPPFLAGS="-DNDEBUG" ./configure $netcdfflag \
+                > ../../netcdf_config.log 2>&1
+            ;;
+        esac
+        ncerror=$?
+        if [ $ncerror -gt 0 ]; then
+            echo "    Error: NetCDF configure returned $ncerror"
+            echo "    NetCDF configure failed!  Check the netcdf_config.log file."
+            echo "    Continuing but NetCDF will be skipped."
+            netcdf=''
+            netcdflib=''
+        else
+            echo "    NetCDF configure succeeded."
+            netcdf='netcdf.mod'
+            netcdflib='../netcdf/lib/libnetcdf.a'
+            cflags="$cflags -DBINTRAJ"
+            ocflags="$ocflags -DBINTRAJ"
+            fppflags="$fppflags -DBINTRAJ"
+        fi
+        cd ../..
+    fi
+else
+    pnetcdf='no'
+    pnetcdflib=''
+    netcdf=''
+    netcdflib=''
+fi
+
+#--------------------------------------------------------------------------
+#  Configure fftw-3.2.2:
+#--------------------------------------------------------------------------
+if [ "$mdgx" = "yes" ]; then
+    mdgxflag="--prefix=$AMBERHOME --disable-fortran" 
+    echo
+    echo "Configuring fftw-3.2.2; (may be time-consuming)"
+    echo
+    cd fftw-3.2.2 && \
+    env CC="$cc" CFLAGS="$cflags" ./configure $mdgxflag \
+            > ../fftw3_config.log 2>&1
+    ncerror=$?
+    if [ $ncerror -gt 0 ]; then
+        echo "    Error: fftw configure returned $ncerror"
+        echo "    fftw configure failed!  Check the fftw3_config.log file."
+        exit 1
+    else
+        echo "    fftw-3.2.2 configure succeeded."
+    fi
+    cd ..
+fi
+
+#--------------------------------------------------------------------------
+#  Configure fftw-2.1.5:
+#--------------------------------------------------------------------------
+if [ "$rism" = "yes" ]; then
+    if [ "$mkl" = "yes" -a "$mpi" = "no" ] ; then
+        echo
+        echo "Using MKL wrappers for fftw-2.1.5;"
+        echo
+        flibs_fftw2="../../lib/libfftw2xf_$compiler.a"
+        mkl_processor="$processor"
+        if [ "$mkl_processor" = "x86_64" ]; then
+            mkl_processor="em64t"
+        fi
+        if [ "$compiler" = "gnu" ]; then
+            fppflags="$fppflags -DSECOND_UNDERSCORE"
+            fflags="$fflags -fsecond-underscore"
+            foptflags="$foptflags -fsecond-underscore"
+        fi
+    else
+        rismflag="--prefix=$AMBERHOME --enable-type-prefix --enable-static=yes" 
+        echo
+        echo "Configuring fftw-2.1.5; (may be time-consuming)"
+        echo
+        cd fftw-2.1.5
+        if [ "$mpi" = "yes" ]; then
+            ./configure $rismflag --enable-mpi CC="$cc" CFLAGS="$cflags" F77="$fc" FFLAGS="$fflags" \
+                > ../fftw2_config.log 2>&1
+        else
+            ./configure $rismflag CC="$cc" CFLAGS="$cflags" F77="$fc" FFLAGS="$fflags" \
+                > ../fftw2_config.log 2>&1
+        fi
+        ncerror=$?
+        if [ $ncerror -gt 0 ]; then
+            echo "    Error: fftw configure returned $ncerror"
+            echo "    fftw configure failed!  Check the fftw2_config.log file."
+            exit 1
+        else
+            echo "    fftw-2.1.5 configure succeeded."
+        fi
+        cd ..
+        flibs_fftw2="../../lib/libdrfftw.a ../../lib/libdfftw.a"
+        if [ "$mpi" = "yes" ]; then
+            flibs_fftw2="../../lib/libdrfftw_mpi.a ../../lib/libdfftw_mpi.a $flibs_fftw2"
+        fi
+    fi
+fi
+
+#------------------------------------------------------------------------------
+#  Set up the mpi compilers:
+#------------------------------------------------------------------------------
+
+if [ "$mpi" = "yes" ]; then
+    cc="mpicc"
+    fc="mpif77"
+    mpi_flag="-DMPI"
+fi
+
+#------------------------------------------------------------------------------
+#  Make some needed directories:
+#------------------------------------------------------------------------------
+cd ..
+if [ ! -x bin ]; then
+    mkdir bin
+fi
+if [ ! -x lib ]; then
+    mkdir lib
+fi
+if [ ! -x include ]; then
+    mkdir include
+fi
+if [ ! -x exe ]; then
+    ln -s bin exe
+fi
+cd src
+
+#------------------------------------------------------------------------------
+#  Finally, write out the config.h file:
+#------------------------------------------------------------------------------
+
+cat <<EOD > config.h
+#  Amber configuration file, created with: $command
+
+###############################################################################
+
+# (1)  Location of the installation
+
+BINDIR=$AMBERHOME/bin
+LIBDIR=$AMBERHOME/lib
+INCDIR=$AMBERHOME/include
+DATDIR=$AMBERHOME/dat
+NABHOME=$AMBERHOME/dat
+
+###############################################################################
+
+
+#  (2) If you want to search additional libraries by default, add them
+#      to the FLIBS variable here.  (External libraries can also be linked into
+#      NAB programs simply by including them on the command line; libraries
+#      included in FLIBS are always searched.)
+
+FLIBS= \$(LIBDIR)/libsym.a $flibs $flibs_mkl $flibs_goto $flibs_arch
+FLIBS_PTRAJ= $flibs $flibs_mkl $flibs_goto $flibs_arch
+FLIBSF= $flibsf $flibs_mkl $flibs_goto $flibs_arch
+FLIBS_FFTW2=$flibs_fftw2
+###############################################################################
+
+#  (3)  Modify any of the following if you need to change, e.g. to use gcc
+#        rather than cc, etc.
+
+SHELL=/bin/sh
+
+#  Set the C compiler, etc. 
+
+#          For GNU:  CC-->gcc; LEX-->flex; YACC-->bison -y -t;
+#          Note: If your lexer is "really" flex, you need to set
+#          LEX=flex below.  For example, on many linux distributions,
+#          /usr/bin/lex is really just a pointer to /usr/bin/flex,
+#          so LEX=flex is necessary.  In general, gcc seems to need
+#          flex.
+
+CC=$cc
+CXX=$cplusplus
+CPLUSPLUS=$cplusplus
+CFLAGS=$cflags $mpi_flag \$(AMBERBUILDFLAGS)
+OCFLAGS=$ocflags $omp_flag $mpi_flag \$(AMBERBUILDFLAGS)
+NABFLAGS=$nabflags
+LDFLAGS=$ldflags \$(AMBERBUILDFLAGS)
+
+LEX=   $lex
+YACC=  \$(BINDIR)/yacc
+AR=    ar rv
+M4=    $m4
+RANLIB=$ranlib
+MAKE=make
+
+#  Set the C-preprocessor.  Code for a small preprocessor is in
+#    uccp-1.3;  it gets installed as \$(BINDIR)/ucpp;
+#    this can generally be used (maybe not on 64-bit machines like altix).
+
+CPP=    $cpp
+
+#  These variables control whether we will use compiled versions of BLAS
+#  and LAPACK (which are generally slower), or whether those libraries are
+#  already available (presumably in an optimized form).
+
+LAPACK=$lapack
+BLAS=$blas
+F2C=$f2c
+
+#  These variables determine whether builtin versions of certain components
+#  can be used, or whether we need to compile our own versions.
+
+UCPP=$ucpp
+C9XCOMPLEX=$c9xcomplex
+
+#  For Windows/cygwin, set SFX to ".exe"; for Unix/Linux leave it empty:
+
+SFX=$suffix
+
+#  Information about Fortran compilation:
+
+FC=$fc
+FFLAGS= $fflags \$(LOCALFLAGS) \$(AMBERBUILDFLAGS)
+FOPTFLAGS= $foptflags \$(LOCALFLAGS) \$(AMBERBUILDFLAGS)
+FREEFORMAT_FLAG= $freeformat_flag
+LM=$lm
+FPP=$fpp $fppflags $mpi_flag
+FPPFLAGS=$fppflags $mpi_flag
+
+BUILD_SLEAP=$build_sleap
+XHOME= $xhome
+XLIBS= $xlibs
+MAKE_XLEAP=$make_xleap
+
+LIBDIVCON=$libdivcon
+INCDIVCON=$incdivcon
+MODULEDIR=$moduledir
+TESTSANDERDIVCON=$testsanderdivcon
+
+NETCDF=$netcdf
+NETCDFLIB=$netcdflib
+PNETCDF=$pnetcdf
+PNETCDFLIB=$pnetcdflib
+
+HASFC=$hasfc
+MDGX=$mdgx
+
+COMPILER=$compiler
+MKL=$MKL_HOME
+MKL_PROCESSOR=$mkl_processor
+EOD
+
+echo " "
+echo "The configuration file, config.h, was successfully created."
+echo " "
+if [ "$mpi" = "yes" ]; then
+  echo "The next step is to type 'make -f Makefile_at clean', followed by"
+  echo "   'make -f Makefile_at parallel'"
+else
+  echo "The next step is to type 'make -f Makefile_at'"
+fi
+echo " "
+exit
+

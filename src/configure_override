@@ -1,0 +1,3 @@
+#!/bin/sh
+bintraj="no"
+flibsf="\$(LIBDIR)/lapack.a \$(LIBDIR)/blas.a"
