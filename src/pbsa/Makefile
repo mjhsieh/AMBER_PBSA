@@ -122,7 +122,6 @@ pb_read.o: \
                     parms.h\
                     dynph.h\
                     ../include/dprec.fh\
-                    ../lib/random.h\
                     findmask.o\
                     pb_force.o\
                     np_force.o
@@ -214,7 +213,6 @@ runmd.o: \
                     timer.h\
                     constants.h\
                     pb_md.h\
-                    ../lib/random.h\
                     parms.h
 runmin.o: \
                     copyright.h\

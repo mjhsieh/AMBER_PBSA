@@ -92,7 +92,7 @@ subroutine pbsa()
       call mdread1()
 !     call openparm(parm//CHAR(0))
 !     call rdparm1()
-      call amopen(8,parm,'O','F','R')
+      call myopen(8,parm,'O','F','R')
       call rdparm1(8)
 
       !        --- now, we can allocate memory:
