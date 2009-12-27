@@ -15,6 +15,13 @@ serial: configured_serial
 	@echo "Installation of ${AMBERTOOLS} is complete at `date`."
 	@echo ""
 
+configured:
+	@(if [ ! -f $(CONFIG_FILE) ] ; then \
+		echo "Error: $(CONFIG_COMMAND) must be executed before $(MAKE) !" ;\
+		exit 2 ;\ # $(CONFIG_COMMAND) ;\
+	fi ;\
+	)
+
 configured_serial: configured
 	@(if grep $(PARALLEL_TOKEN) $(CONFIG_FILE) > /dev/null ; then \
 		echo "Error: $(CONFIG_FILE) is of type parallel, not serial !" ;\

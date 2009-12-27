@@ -664,8 +664,6 @@ if [ "$gotolib" = "yes" ]; then
 elif [ "$macAccelerate" = "yes" -a "$mkl" = "no" ] ; then
     lapack=skip
     blas=skip
-    flibs="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
-    flibsf="\$(LIBDIR)/carpack.a \$(LIBDIR)/f2c.a"
     flibs_arch="-framework Accelerate"
 elif [ "$macAccelerate" = "yes" -a "$mkl" = "yes" ] ; then
     echo "MKL setting presence disables -macAccelerate."
