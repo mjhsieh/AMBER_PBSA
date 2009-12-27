@@ -1,0 +1,145 @@
+
+          -------------------------------------------------------
+          PBSA VERSION 2009                       UC Irvine
+          -------------------------------------------------------
+
+| Run on 12/17/2009 at 18:44:46
+  [-O]verwriting output
+
+File Assignments:
+|  MDIN: mdin                                                                  
+| MDOUT: mdout.1az6.min                                                        
+|INPCRD: 1az6.crd                                                              
+|  PARM: 1az6.top                                                              
+|
+ 
+ Here is the input file:
+ 
+ test of pbsa                                                                  
+ &cntrl                                                                        
+   ntx=1, imin=1, ipb=1, inp=0                                                 
+ /                                                                             
+ &pb                                                                           
+   npbverb=0, istrng=150, ivalence=1, iprob=2.0, epsout=80.0, epsin=1.0, space=
+   accept=1e-3, dprob=1.5, radiopt=1, fillratio=2, bcopt=5, smoothopt=2, nfocus
+   dbfopt=1, cutnb=8, maxitn=10000                                             
+ /                                                                             
+ PB Info in pb_read(): npopt has been overwritten with inp
+
+--------------------------------------------------------------------------------
+   1.  RESOURCE   USE: 
+--------------------------------------------------------------------------------
+
+| Flags:                                                                        
+| New format PARM file being parsed.
+| Version =    1.000 Date = 11/25/05 Time = 12:53:42
+ NATOM  =     489 NTYPES =      14 NBONH =     236 MBONA  =     258
+ NTHETH =     527 MTHETA =     352 NPHIH =     982 MPHIA  =     483
+ NHPARM =       0 NPARM  =       0 NNB   =    2666 NRES   =      36
+ NBONA  =     258 NTHETA =     352 NPHIA =     483 NUMBND =      29
+ NUMANG =      59 NPTRA  =      22 NATYP =      22 NPHB   =       0
+ IFBOX  =       0 NMXRS  =      21 IFCAP =       0 NEXTRA =       0
+ NCOPY  =       0
+
+
+|     Memory Use     Allocated
+|     Real               18149
+|     Hollerith           2972
+|     Integer            37852
+|     Max Pairs              1
+|     Max Rstack             1
+|     Max Istack             1
+|       Total              301 kbytes
+
+--------------------------------------------------------------------------------
+   2.  CONTROL  DATA  FOR  THE  RUN
+--------------------------------------------------------------------------------
+
+                                                                                
+
+General flags:
+     imin    =       1, nmropt  =       0
+
+Nature and format of input:
+     ntx     =       1, irest   =       0, ntrx    =       1
+
+Nature and format of output:
+     ntxo    =       1, ntpr    =      50, ntrx    =       1, ntwr    =     500
+     iwrap   =       0, ntwx    =       0, ntwv    =       0, ntwe    =       0
+     ioutfm  =       0, ntwprt  =       0, idecomp =       0, rbornstat=      0
+
+Potential function:
+     ntf     =       1, ntb     =       1, igb     =      10, nsnb    =      25
+     ipol    =       0, gbsa    =       0, iesp    =       0
+     dielc   =   1.00000, cut     =   8.00000, intdiel =   1.00000
+     scnb    =   2.00000, scee    =   1.20000
+
+Frozen or restrained atoms:
+     ibelly  =       0, ntr     =       0
+
+Energy minimization:
+     maxcyc  =       1, ncyc    =      10, ntmin   =       1
+     dx0     =   0.01000, drms    =   0.00010
+
+--------------------------------------------------------------------------------
+   3.  ATOMIC COORDINATES AND VELOCITIES
+--------------------------------------------------------------------------------
+
+                                                                                
+ begin time read from input coords =     0.000 ps
+
+ Number of triangulated 3-point waters found:        0
+
+--------------------------------------------------------------------------------
+   4.  RESULTS
+--------------------------------------------------------------------------------
+
+ Total surface charge      -0.9872
+ Reaction field energy   -271.1679
+
+ NSTEP =        1   TIME(PS) =       0.000  TEMP(K) =     0.00  PRESS =     0.0
+ Etot   =     -2874.3164  EKtot   =         0.0000  EPtot      =         0.0000
+ BOND   =         0.0000  ANGLE   =         0.0000  DIHED      =         0.0000
+ 1-4 NB =         0.0000  1-4 EEL =         0.0000  VDWAALS    =      -178.7026
+ EELEC  =     -2424.4459  EPB     =      -271.1679  RESTRAINT  =         0.0000
+ ECAVITY=         0.0000  EDISPER =         0.0000
+ ------------------------------------------------------------------------------
+
+
+
+  Maximum number of minimization cycles reached.
+
+
+                    FINAL RESULTS
+
+
+ NSTEP =        1   TIME(PS) =       0.000  TEMP(K) =     0.00  PRESS =     0.0
+ Etot   =     -2874.3164  EKtot   =         0.0000  EPtot      =         0.0000
+ BOND   =         0.0000  ANGLE   =         0.0000  DIHED      =         0.0000
+ 1-4 NB =         0.0000  1-4 EEL =         0.0000  VDWAALS    =      -178.7026
+ EELEC  =     -2424.4459  EPB     =      -271.1679  RESTRAINT  =         0.0000
+ ECAVITY=         0.0000  EDISPER =         0.0000
+ ------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+   5.  TIMINGS
+--------------------------------------------------------------------------------
+
+| Total time                    21.98
+| Read prm/crd time              0.09
+| Force time                    21.89
+| Nonbond force                 21.89
+| PB Nonbond                    21.89
+| PB NB list                     0.00
+| PB FD grid                     0.09
+| PB FD Force                   21.79
+| PB Epsmap                      0.58
+| PB Solver                     20.96
+| PB ITER                        5.07
+| PB Direct                      0.00
+| PB Multiple                    0.00
+|           Job began  at 18:44:46.118  on 12/17/2009
+|           Setup done at 18:44:46.210  on 12/17/2009
+|           Run   done at 18:45:08.099  on 12/17/2009
+|     wallclock() was called      32 times

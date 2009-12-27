@@ -1,0 +1,30 @@
+include ../src/config.h
+
+test: clean is_amberhome_defined test.pbsa
+
+test.pbsa:
+	cd pbsa_dmp && ./Run.dmp.min
+	cd pbsa_lpb && ./Run.lsolver.min
+	cd pbsa_tsr && ./Run.tsrb.min
+	cd pbsa_radi && ./Run.ion.min
+	cd pbsa_npb && ./test
+	cd pbsa_frc && ./test
+	cd pbsa_ipb2 && ./Run.110D.min
+	cd pbsa_delphi && ./Run.1az6.min
+
+is_amberhome_defined:
+	@(if [ -z "$(AMBERHOME)" ] ; then \
+	    echo "Error: AMBERHOME should be defined or else some tests will fail !" ;\
+	    exit 2 ;\
+	fi ;\
+	)
+
+clean:
+	(find pbsa_* -name '*.out' -o -name '*.dat' -o \
+        -name "*.dif" | \
+	while read dif ;\
+	do \
+	    rm -f $$dif ;\
+	done ;\
+	)
+	/bin/rm -f TEST_FAILURES.diff
