@@ -1,0 +1,21 @@
+--- /opt/amber11/src/pbsa/Makefile	2009-12-27 06:26:03.000000000 -0800
++++ pbsa/Makefile	2009-12-27 18:41:03.000000000 -0800
+@@ -31,16 +31,14 @@
+ 
+ #---------------------------------------------------------------------------
+ pbsa$(SFX):	$(OBJ) syslib netlib
+-	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/sys2.a $(FLIBSF) $(LDFLAGS)
++	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
+ 
+ syslib:
+-	cd ../lib && $(MAKE) sys2.a
++	cd ../lib && $(MAKE) nxtsec.o
+ 
+ netlib: 
+ 	cd ../lapack && $(MAKE) $(LAPACK)
+ 	cd ../blas && $(MAKE) $(BLAS)
+-	cd ../carpack && $(MAKE) install
+-	cd ../f2c && $(MAKE) install
+ 
+ .f.o:   $<
+ 	$(FPP) $< > _$<

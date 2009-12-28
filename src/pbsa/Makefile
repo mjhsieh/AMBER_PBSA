@@ -30,7 +30,7 @@ uninstall:
 	-rm -f $(BINDIR)/pbsa$(SFX)
 
 #---------------------------------------------------------------------------
-pbsa$(SFX):	$(OBJ) netlib syslib
+pbsa$(SFX):	$(OBJ) syslib netlib
 	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 syslib:
