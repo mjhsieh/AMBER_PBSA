@@ -131,12 +131,13 @@ subroutine getcor(nr,x,v,f,ntx,box,mytime)
          read(filenum,end=1000,err=1000) (x(i),i = 1,nr3)
          read(filenum,end=1010,err=1010) (v(i),i = 1,nr3)
          do i=1,6
-            ifld(i)=3
+!           ifld(i)=3
             fvar(i)=0.0d0
          enddo
-         ifld(7)=0
-         ihol(1)=0
-         call rfree(ifld,ihol,ivar,fvar,filenum,6)
+!        ifld(7)=0
+!        ihol(1)=0
+!        call rfree(ifld,ihol,ivar,fvar,filenum,6)
+         read(filenum,end=1020,err=1020) (fvar(i),i = 1,6)
          if((fvar(4) /= 0).or.(fvar(5) /= 0).or.(fvar(6) /= 0)) then
             alpha=fvar(4)
             beta=fvar(5)
@@ -175,7 +176,7 @@ subroutine getcor(nr,x,v,f,ntx,box,mytime)
    1010 continue
    write(6,'(a,a)') 'FATAL: Could not read velocities from ',inpcrd
    call mexit(6, 1)
-!  1020 continue
+   1020 continue
    write(6,'(a,a)') 'FATAL: Could not read BOX from ',inpcrd
    call mexit(6, 1)
    

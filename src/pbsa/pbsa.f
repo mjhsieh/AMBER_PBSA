@@ -397,7 +397,6 @@ integer function pb_iargc()
    integer iargc
    pb_iargc = iargc()
 
-
 end function pb_iargc
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -406,9 +405,25 @@ subroutine getpb_arg(iarg, arg)
    implicit none
    integer iarg
    character(len=*) arg
-      ! Intrinsic getarg requires a 4 byte integer argument; 
-      ! this guards the argument for builds with default 8 byte integers.
-      call getarg(int(iarg,4), arg)
-
+   ! Intrinsic getarg requires a 4 byte integer argument; 
+   ! this guards the argument for builds with default 8 byte integers.
+   call getarg(int(iarg,4), arg)
  
 end subroutine getpb_arg
+
+!  Author Mengjuei Hsieh
+subroutine mexit(filenum, exitstatus)
+   implicit none
+   integer filenum
+   integer exitstatus
+
+   if (filenum > 0) then  ! close this unit if greater than zero
+      close(unit=filenum)
+   endif
+   ! exit status; error if non-zero
+#if XLF90 || IBM3090 || F2C
+   if (exitstatus.ne.0) stop 1; stop 0
+#else
+   call exit(exitstatus)
+#endif
+end subroutine mexit

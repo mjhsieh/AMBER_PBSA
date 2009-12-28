@@ -30,11 +30,11 @@ uninstall:
 	-rm -f $(BINDIR)/pbsa$(SFX)
 
 #---------------------------------------------------------------------------
-pbsa$(SFX):	$(OBJ) syslib netlib
-	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/sys2.a $(FLIBSF) $(LDFLAGS)
+pbsa$(SFX):	$(OBJ) netlib syslib
+	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 syslib:
-	cd ../lib && $(MAKE) sys2.a
+	cd ../lib && $(MAKE) nxtsec.o
 
 netlib: 
 	cd ../lapack && $(MAKE) $(LAPACK)

@@ -3,6 +3,25 @@
 #include "timer.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ SYSTEM CLOCK
+subroutine wallclock( wallc )
+   implicit none
+   _REAL_ wallc
+   integer ncalls,n
+   integer mycount, myrate
+
+   data ncalls /0/
+
+   call system_clock( COUNT=mycount, COUNT_RATE=myrate)
+   wallc = dble(mycount)/dble(myrate)
+   ncalls = ncalls + 1
+   return
+entry nwallclock ( n )
+   n = ncalls
+   return
+end subroutine wallclock
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ PBSA TIMER
 module timer_module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
