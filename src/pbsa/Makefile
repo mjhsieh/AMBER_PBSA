@@ -30,7 +30,7 @@ uninstall:
 	-rm -f $(BINDIR)/pbsa$(SFX)
 
 #---------------------------------------------------------------------------
-pbsa$(SFX):	$(OBJ) syslib netlib
+pbsa$(SFX):	$(OBJ) syslib netlib c9x-complex
 	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 syslib:
@@ -39,6 +39,11 @@ syslib:
 netlib: 
 	cd ../lapack && $(MAKE) $(LAPACK)
 	cd ../blas && $(MAKE) $(BLAS)
+
+c9x-complex:
+	if test "$(C9XCOMPLEX)"; \
+	then cd ../c9x-complex && $(MAKE) libcmx.a
+	fi
 
 .f.o:   $<
 	$(FPP) $< > _$<
