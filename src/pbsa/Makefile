@@ -42,7 +42,7 @@ netlib:
 
 c9x-complex:
 	if test -n $(C9XCOMPLEX); \
-	then cd ../c9x-complex && $(MAKE) libcmx.a; \
+	then cd ../c9x-complex && $(MAKE) libmc.a; \
 	fi
 
 .f.o:   $<
