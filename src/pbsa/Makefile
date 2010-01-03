@@ -41,7 +41,7 @@ netlib:
 	cd ../blas && $(MAKE) $(BLAS)
 
 c9x-complex:
-	if test "$(C9XCOMPLEX)"; \
+	if test -n $(C9XCOMPLEX); \
 	then cd ../c9x-complex && $(MAKE) libcmx.a
 	fi
 
