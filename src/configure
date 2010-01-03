@@ -192,7 +192,7 @@ if [ `uname -s|awk '{print $1}'` = "Darwin" ]; then
         x86_64=yes ;;
     *) ;;
     esac
-else
+elif [ $macAccelerate != "no" ]; then
     echo "This is not a Macintosh, disabling -macAccelerate."
     macAccelerate="no"
 fi
