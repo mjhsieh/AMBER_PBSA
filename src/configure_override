@@ -3,5 +3,5 @@ bintraj="no"
 if [ "$macAccelerate" = "yes" -o "$mkl" = "yes" ] ; then
    flibsf=""
 else
-   flibsf="\$(LIBDIR)/lapack.a \$(LIBDIR)/blas.a"
+   flibsf="\$(LIBDIR)/blas.a"
 fi

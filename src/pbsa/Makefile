@@ -37,11 +37,10 @@ syslib:
 	cd ../lib && $(MAKE) nxtsec.o
 
 netlib: 
-	cd ../lapack && $(MAKE) $(LAPACK)
 	cd ../blas && $(MAKE) $(BLAS)
 
 c9x-complex:
-	if test -n $(C9XCOMPLEX); \
+	@if test $(C9XCOMPLEX) != "skip"; \
 	then cd ../c9x-complex && $(MAKE) libmc.a; \
 	fi
 
