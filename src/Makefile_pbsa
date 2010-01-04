@@ -32,7 +32,6 @@ configured_serial: configured
 
 clean:
 	(cd blas && $(MAKE) clean )
-	(cd lapack && $(MAKE) clean )
 	(cd pbsa && $(MAKE) clean )
 	(cd lib && $(MAKE) clean )
 

@@ -1,5 +1,6 @@
 #!/bin/sh
 bintraj="no"
+c9xcomplex="skip"
 if [ "$macAccelerate" = "yes" -o "$mkl" = "yes" ] ; then
    flibsf=""
 else

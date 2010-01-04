@@ -1,5 +1,14 @@
 --- /opt/amber11/src/configure	2009-12-27 06:05:23.000000000 -0800
-+++ configure	2009-12-27 06:15:16.000000000 -0800
++++ configure	2010-01-04 14:06:32.000000000 -0800
+@@ -192,7 +192,7 @@
+         x86_64=yes ;;
+     *) ;;
+     esac
+-else
++elif [ $macAccelerate != "no" ]; then
+     echo "This is not a Macintosh, disabling -macAccelerate."
+     macAccelerate="no"
+ fi
 @@ -247,6 +247,13 @@
  ucpp=install
  cpp="\$(BINDIR)/ucpp -l"
@@ -23,3 +32,12 @@
      flibs_arch="-framework Accelerate"
  elif [ "$macAccelerate" = "yes" -a "$mkl" = "yes" ] ; then
      echo "MKL setting presence disables -macAccelerate."
+@@ -669,7 +674,7 @@
+ #  Support platforms without a C <complex.h> by building c9x-complex.
+ #--------------------------------------------------------------------------
+ 
+-if [ -r /usr/include/complex.h ]; then
++if [ -r /usr/include/complex.h -o "$c9xcomplex" = "skip" ]; then
+     c9xcomplex='skip'
+ else
+     c9xcomplex='libmc.a'

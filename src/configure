@@ -674,7 +674,7 @@ fi
 #  Support platforms without a C <complex.h> by building c9x-complex.
 #--------------------------------------------------------------------------
 
-if [ -r /usr/include/complex.h ]; then
+if [ -r /usr/include/complex.h -o "$c9xcomplex" = "skip" ]; then
     c9xcomplex='skip'
 else
     c9xcomplex='libmc.a'
