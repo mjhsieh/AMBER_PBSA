@@ -45,10 +45,8 @@ superclean: uninstall distclean
 
 uninstall: uninstall_libraries
 	(cd blas && $(MAKE) uninstall )
-	(cd lapack && $(MAKE) uninstall )
 	(cd pbsa && $(MAKE) uninstall )
 	(cd lib && $(MAKE) -f Makefile_at uninstall )
 
 uninstall_libraries:
-	(cd ../lib && rm -f libnab.a libsff.a cifparse.a libpdb.a carpack.a \
-              cblas.a clapack.a blas.a lapack.a f2c.a libsym.a libfftw3.a)
+	(cd ../lib && rm -f blas.a)
