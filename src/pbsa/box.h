@@ -6,7 +6,7 @@ parameter(bc_boxr=613)
 
 ! ... floats:
 
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 _REAL_ box,cut,scnb,scee,dielc,rad,wel,radhb,welhb, &
       cutcap,xcap,ycap,zcap,fcap,rwell
 common/boxr/box(3),cut,scnb,scee,dielc, &

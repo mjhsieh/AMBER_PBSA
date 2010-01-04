@@ -1,4 +1,4 @@
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 !  dec cpp requires this comment line to avoid losing beginning spaces
 
 integer ilbopt, ilbnob, lbverb, lbfreq, dozero, plevel

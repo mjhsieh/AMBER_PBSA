@@ -113,7 +113,6 @@ pb_read.o: \
                     memory.h\
                     parms.h\
                     dynph.h\
-                    findmask.o\
                     pb_force.o\
                     np_force.o
 timer.o: \

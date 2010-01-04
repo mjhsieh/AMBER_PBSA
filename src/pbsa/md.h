@@ -1,4 +1,4 @@
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 !-------------BEGIN    md.h  ------------------------------------------------
 
 integer BC_MDI  ! size in integers of common block mdi
