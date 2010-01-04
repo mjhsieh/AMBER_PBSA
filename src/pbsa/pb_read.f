@@ -1,5 +1,5 @@
 #include "copyright.h"
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Open input files and read cntrl namelist.

@@ -1,5 +1,5 @@
 #include "copyright.h"
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 #define REQUIRE(e) if(.not.(e)) call croak(__FILE__,__LINE__)
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

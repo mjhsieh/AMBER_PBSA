@@ -1,5 +1,5 @@
 ! <compile=optimized>
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ bond energy place holder

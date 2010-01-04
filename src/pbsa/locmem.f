@@ -1,5 +1,5 @@
 #include "copyright.h"
-#include "../include/dprec.fh"
+#  define _REAL_ double precision
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Amber memory interface routine

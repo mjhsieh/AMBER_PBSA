@@ -61,40 +61,29 @@ myopen.o: \
                     copyright.h
 getcoor.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     files.h
 egb.o: \
                     copyright.h\
-                    ../include/assert.fh\
-                    ../include/dprec.fh\
                     md.h\
                     parms.h\
                     timer.h\
                     constants.h
 ene.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     md.h\
                     box.h\
                     parms.h\
                     flocntrl.h
-assert.o: \
-                    copyright.h\
-                    ../include/assert.fh
 pb_write.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     box.h\
                     files.h\
                     md.h\
                     extra.h\
                     pb_force.o\
                     np_force.o
-findmask.o: \
-                    ../include/dprec.fh
 force.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     egb.o\
                     constants.h\
                     timer.h\
@@ -109,7 +98,6 @@ force.o: \
                     np_force.o
 locmem.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     box.h\
                     memory.h\
                     md.h\
@@ -125,22 +113,18 @@ pb_read.o: \
                     memory.h\
                     parms.h\
                     dynph.h\
-                    ../include/dprec.fh\
                     findmask.o\
                     pb_force.o\
                     np_force.o
 timer.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     timer.h
 sa_driver.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     constants.h\
                     pb_def.h
 np_force.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     pb_def.h\
                     timer.h\
                     pb_md.h\
@@ -149,7 +133,6 @@ np_force.o: \
 		    sa_driver.o
 pb_force.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     pb_def.h\
                     timer.h\
                     md.h\
@@ -163,39 +146,32 @@ pb_force.o: \
                     pb_lsolver.o
 pb_exmol.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     pb_def.h\
                     constants.h
 pb_mpfrc.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     constants.h\
                     pb_def.h
 pb_direct.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     constants.h\
                     pb_def.h
 pb_list.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     pb_def.h\
                     constants.h\
                     pb_force.o
 pb_nlsolver.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     timer.h\
                     timer.o\
                     constants.h
 pb_lsolver.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     timer.h\
                     constants.h
 pb_init.o: \
                     copyright.h\
-                    ../include/dprec.fh\
                     pb_def.h\
                     files.h\
                     md.h\
@@ -207,8 +183,6 @@ pb_init.o: \
                     np_force.o
 runmd.o: \
                     copyright.h\
-                    ../include/dprec.fh\
-                    ../include/assert.fh\
                     files.h\
                     md.h\
                     box.h\
@@ -220,8 +194,6 @@ runmd.o: \
                     parms.h
 runmin.o: \
                     copyright.h\
-                    ../include/assert.fh\
-                    ../include/dprec.fh\
                     constants.h\
                     md.h\
                     box.h\
@@ -231,8 +203,6 @@ runmin.o: \
                     pb_md.h
 pbsa.o: \
                     copyright.h \
-                    ../include/dprec.fh\
-                    ../include/assert.fh\
                     files.h\
                     memory.h\
                     box.h\
