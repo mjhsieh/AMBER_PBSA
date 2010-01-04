@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ -f config.h ]; then
+   make -f Makefile_pbsa superclean
+fi
+./configure gnu
+make -f Makefile_pbsa
+exit
+cd ../test; make -f Makefile_pbsa
