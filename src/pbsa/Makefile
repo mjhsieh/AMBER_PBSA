@@ -40,9 +40,9 @@ netlib:
 	cd ../blas && $(MAKE) $(BLAS)
 
 c9x-complex:
-	@if test $(C9XCOMPLEX) != "skip"; \
-	then cd ../c9x-complex && $(MAKE) libmc.a; \
-	fi
+	@if test $(C9XCOMPLEX) != "skip"; then \
+	   cd ../c9x-complex && $(MAKE) libmc.a; \
+	 fi
 
 .f.o:   $<
 	$(FPP) $< > _$<
