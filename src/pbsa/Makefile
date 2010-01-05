@@ -21,16 +21,16 @@ OBJ=dsvdc.o  pbsa.o pb_read.o pb_write.o getcoor.o \
 	pb_exmol.o pb_mpfrc.o pb_direct.o pb_list.o timer.o \
 	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o
 
-all::	pbsa$(SFX)
+all: pbsa$(SFX)
 
-install:	pbsa$(SFX)
+install: pbsa$(SFX)
 	/bin/mv pbsa$(SFX) $(BINDIR)
 
 uninstall:
 	-rm -f $(BINDIR)/pbsa$(SFX)
 
 #---------------------------------------------------------------------------
-pbsa$(SFX):	$(OBJ) syslib netlib c9x-complex
+pbsa$(SFX): $(OBJ) syslib netlib c9x-complex
 	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 syslib:
@@ -54,6 +54,8 @@ clean:
 	/bin/rm -f _*.f
 	/bin/rm -f *.mod *__genmod.f90
 	/bin/rm -f *.d
+
+distclean: clean
 
 #----------HEADER DEPENDENCIES (constructed from ./makedepend)
 

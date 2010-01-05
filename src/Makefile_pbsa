@@ -46,7 +46,7 @@ superclean: uninstall distclean
 uninstall: uninstall_libraries
 	(cd blas && $(MAKE) uninstall )
 	(cd pbsa && $(MAKE) uninstall )
-	(cd lib && $(MAKE) -f Makefile_at uninstall )
+	(cd lib && $(MAKE) uninstall )
 
 uninstall_libraries:
 	(cd ../lib && rm -f blas.a)
