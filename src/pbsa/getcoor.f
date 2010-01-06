@@ -6,8 +6,8 @@
 subroutine getcor(nr,x,v,f,ntx,box,mytime)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !
-   ! Authors:
-   ! Mengjuei Hsieh, Luo Research Group, UC-Irvine
+   ! Rewritten by:
+   ! Meng-Juei Hsieh, Luo Research Group, UC-Irvine
    !
    ! This is a Amber restart file reader that preserves the behaviors of getcor
    ! for compatibility.
@@ -30,7 +30,7 @@ subroutine getcor(nr,x,v,f,ntx,box,mytime)
    character(len=256) testbuffer
    
    nr3 = 3*nr
-   filenum = 9 !AMBERTODO: use filenum=-1 for new myopen()
+   filenum = 9
    
    write(6,9108)
    

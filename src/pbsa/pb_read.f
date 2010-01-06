@@ -865,7 +865,7 @@ subroutine pb_read
 end subroutine pb_read 
 
 subroutine myechoin (ilun,iout)
-   ! Author: Mengjuei Hsieh
+   ! Rewritten by: Meng-Juei Hsieh
    ! A rewrite of echoin
    implicit none
    integer ilun, iout
@@ -924,7 +924,7 @@ subroutine myechoin (ilun,iout)
 end subroutine myechoin
 
 subroutine mynmlsrc(srchkey,ilun,ifound)
-   ! Author: Mengjuei Hsieh
+   ! Author: Meng-Juei Hsieh
    implicit none
    character(len=*) srchkey
    integer ilun

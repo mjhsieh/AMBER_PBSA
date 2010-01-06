@@ -1,8 +1,7 @@
 #include "copyright.h"
 #  define _REAL_ double precision
 
-
-!  Author Mengjuei Hsieh
+!  Author Meng-Juei Hsieh
 subroutine croak(strwhich, iwhere)
    implicit none
    character(*) strwhich
@@ -376,7 +375,7 @@ end subroutine pb_print
 
 !  Wrapper for i/o buffer flushing routine
 !  Author: George Seibel
-!  Rewritten by: Mengjuei Hsieh
+!  Rewritten by: Meng-Juei Hsieh
 !  Working for most Unix (BSD, Convex, Sun, Stellar, SGI Iris...)
 subroutine amflsh(filenum)
    implicit none

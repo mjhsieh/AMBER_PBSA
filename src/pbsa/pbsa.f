@@ -411,7 +411,7 @@ subroutine getpb_arg(iarg, arg)
  
 end subroutine getpb_arg
 
-!  Author Mengjuei Hsieh
+!  Rewritten by: Meng-Juei Hsieh
 subroutine mexit(filenum, exitstatus)
    implicit none
    integer filenum
