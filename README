@@ -1,0 +1,26 @@
+Synopsis
+
+    A read-me document file goes here for Stand-alone PBSA program.
+
+Descriptions
+
+(1) What is this for:
+(2) How to install:
+
+Copyrights & Licenses
+
+(1) Files in src/pbsa and test/pbsa_* are released under GPLv2. See
+    src/pbsa/LICENSE and src/pbsa/copyright.h for more information.
+(2) Files in src/blas are in the public domain with these conditions:
+    2.1) BLAS is copyrighted but not trademarked. Netlib only asks
+         that proper credit be given to the authors.
+    2.2) If you modify the source for these routines, Netlib asks that
+         you change the name of the routine and comment the changes
+         made to the original.
+    2.3) If a modification is done, however, it is the responsibility
+         of the person who modified the routine to provide support.
+    Please visit http://www.netlib.org/blas/faq.html for more
+    information.
+(3) The rest of the files are released under GPLv2. Copyrights belong
+    to individual authors. For more information, visit AmberTools
+    website at http://ambermd.org/#AmberTools
