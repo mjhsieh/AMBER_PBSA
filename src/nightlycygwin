@@ -4,5 +4,5 @@ if [ -f config.h ]; then
 fi
 ./configure -cygwin gnu
 make -f Makefile_pbsa
+cd ../test; /usr/bin/time -p env AMBERHOME=$PWD/.. make -f Makefile_pbsa
 exit
-cd ../test; make -f Makefile_pbsa
