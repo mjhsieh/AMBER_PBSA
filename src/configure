@@ -351,7 +351,7 @@ gnu)
         if [ $x86_64 = "yes" ]; then
           #-mfpmath=sse is default for x86_64, no need to specific it
           ocflags="$ocflags -mtune=generic" 
-          foptflags="$foptflags -mtune=generic"
+          foptflags="$foptflags -mtune=generic -ffast-math"
         elif [ "$processor" =  "ia64" ]; then
           echo "Using simplified compilers flags for ia64: check config.h"
         else # i386 needs to be told to use sse prior to using -mfpmath=sse

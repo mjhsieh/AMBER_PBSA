@@ -625,12 +625,12 @@ subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag
    if ( npbstep <= nsaslag ) then
       do ip = 1, nsatm
          sumnmax(ip) = sumnmax(ip) + nmax(ip)
-         avnmax(ip) = sumnmax(ip)/REAL(npbstep)
+         avnmax(ip) = sumnmax(ip)/dble(npbstep)
          sumnexp(ip) = sumnexp(ip) + nexp(ip)
-         avnexp(ip) = sumnexp(ip)/REAL(npbstep)
+         avnexp(ip) = sumnexp(ip)/dble(npbstep)
       end do
    else
-      wf0 = ONE/REAL(nsaslag)
+      wf0 = ONE/dble(nsaslag)
       wf1 = ONE - wf0
       do ip = 1, nsatm
          avnmax(ip) = wf1*avnmax(ip) + wf0*nmax(ip)
@@ -665,8 +665,8 @@ subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag
        
       ! compute SASA for printout
        
-      prtsas = prtsas + FOURPI*radip2(iatm)*nexp(ip)/REAL(maxsph)
-      if ( verbose .and. pbprint ) write(6, *) iatm, FOURPI*radip2(iatm)*nexp(ip)/REAL(maxsph)
+      prtsas = prtsas + FOURPI*radip2(iatm)*nexp(ip)/dble(maxsph)
+      if ( verbose .and. pbprint ) write(6, *) iatm, FOURPI*radip2(iatm)*nexp(ip)/dble(maxsph)
    end do
     
 contains
@@ -829,10 +829,10 @@ subroutine sa_srf( verbose,pbprint,natom )
 
       if ( lstsph(iatm) <= fstsph(iatm) ) then
          nmax(nsatm) = ZERO
-         nexp(nsatm) = REAL(nsurf)
+         nexp(nsatm) = dble(nsurf)
       else
-         nmax(nsatm) = REAL(lstsph(iatm) - fstsph(iatm) + 1)
-         nexp(nsatm) = REAL(nsurf)
+         nmax(nsatm) = dble(lstsph(iatm) - fstsph(iatm) + 1)
+         nexp(nsatm) = dble(nsurf)
       end if
    enddo
 
@@ -1243,14 +1243,14 @@ subroutine sa_vol( verbose,pbprint,natom )
       write(6, '(1x,a,3f10.3)') ' SAV: Zmin, Zmax, Zmax-Zmin:', zmin, zmax, zmax-zmin
    end if
     
-   xm = nint( (xmax - xmin)*rh ) + nbuffer; xm = 2*nint( REAL(xm)*HALF ) + 1
-   ym = nint( (ymax - ymin)*rh ) + nbuffer; ym = 2*nint( REAL(ym)*HALF ) + 1
-   zm = nint( (zmax - zmin)*rh ) + nbuffer; zm = 2*nint( REAL(zm)*HALF ) + 1
+   xm = nint( (xmax - xmin)*rh ) + nbuffer; xm = 2*nint( dble(xm)*HALF ) + 1
+   ym = nint( (ymax - ymin)*rh ) + nbuffer; ym = 2*nint( dble(ym)*HALF ) + 1
+   zm = nint( (zmax - zmin)*rh ) + nbuffer; zm = 2*nint( dble(zm)*HALF ) + 1
    xmymzm = xm*ym*zm
    if ( verbose .and. pbprint ) write(6, '(a,1x,3i5)') ' SAV: Grid dimension ', xm, ym, zm
-   gox = - REAL(xm+1)*htmp*HALF + xbox
-   goy = - REAL(ym+1)*htmp*HALF + ybox
-   goz = - REAL(zm+1)*htmp*HALF + zbox
+   gox = - dble(xm+1)*htmp*HALF + xbox
+   goy = - dble(ym+1)*htmp*HALF + ybox
+   goz = - dble(zm+1)*htmp*HALF + zbox
    if ( verbose .and. pbprint ) write(6, '(a,1x,3f10.3)') ' SAV: Grid origin ', gox, goy, goz
     
    do iatm = 1, natom
@@ -1335,11 +1335,11 @@ subroutine exsasph( xm,ym,zm,range1,xi,yi,zi,insph )
    lowk = int(zi - range1) + 1; highk = int(zi + range1)
    do k = lowk, highk
 
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = int(yi - range2) + 1; highj = int(yi + range2)
       do j = lowj, highj
           
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 > ZERO ) then
              
             lowi = int(xi - range3) + 1; highi = int(xi + range3)

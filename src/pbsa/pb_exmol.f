@@ -81,11 +81,11 @@ subroutine exstsph( dielsph,insph,inatm,dst )
    lowk = ceiling(zi - range1); highk = floor(zi + range1)
    do k = lowk, highk
 
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = ceiling(yi - range2); highj = floor(yi + range2)
       do j = lowj, highj
           
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 >= 0.0d0 ) then
              
             lowi = ceiling(xi - range3); highi = floor(xi + range3)
@@ -328,11 +328,11 @@ subroutine exsasph( dielsph,insph,inatm,dst )
    lowk = max(1,ceiling(zi - range1)); highk = min(zm,floor(zi + range1))
    do k = lowk, highk
 
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = max(1,ceiling(yi - range2)); highj = min(ym,floor(yi + range2))
       do j = lowj, highj
 
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 >= 0.0d0 ) then
 
             lowi = max(1,ceiling(xi - range3)); highi = min(xm,floor(xi + range3))
@@ -390,11 +390,11 @@ subroutine exvwsph( dielsph,insph,inatm,dst )
    lowk = max(1,ceiling(zi - range1)); highk = min(zm,floor(zi + range1))
    do k = lowk, highk
 
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = max(1,ceiling(yi - range2)); highj = min(ym,floor(yi + range2))
       do j = lowj, highj
 
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 >= 0.0d0 ) then
 
             lowi = max(1,ceiling(xi - range3)); highi = min(xm,floor(xi + range3))
@@ -455,11 +455,11 @@ subroutine exdensph(ip,insph,packing,dens,atmctr )
    lowk = int(zi - range1) + 1; highk = int(zi + range1)
    do k = lowk, highk
 
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = int(yi - range2) + 1; highj = int(yi + range2)
       do j = lowj, highj
           
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 > 0.0d0 ) then
              
             lowi = int(xi - range3) + 1; highi = int(xi + range3)
@@ -622,12 +622,12 @@ subroutine exresph( dielsph,insph,inatm,dst )
    do k = lowk, highk
        
       if ( k < 1 .or. k > zm ) cycle
-      range2 = sqrt(range1**2-(zi-REAL(k))**2)
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
       lowj = ceiling(yi - range2); highj = floor(yi + range2)
       do j = lowj, highj
           
          if ( j < 1 .or. j > ym ) cycle
-         range3 = sqrt(range2**2-(yi-REAL(j))**2)
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
          if ( range3 >= 0.0d0 ) then
              
             lowi = ceiling(xi - range3); highi = floor(xi + range3)
@@ -1037,10 +1037,10 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       if ( range3 > 0.0d0 ) then
          nbndx = nbndx + 1
          if ( b == 2 ) then
-            aa = range3 - xi + REAL(i+1)
+            aa = range3 - xi + dble(i+1)
             fedgex(nbndx) = 1.0d0 - aa
          else
-            aa = range3 + xi - REAL(i)
+            aa = range3 + xi - dble(i)
             fedgex(nbndx) = aa
          end if
          epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
@@ -1056,7 +1056,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front = range1**2-(zi-k)**2-(yi-j)**2
       if ( front >= 0.d0 ) then
          range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
-         aa = xi+range3-REAL(i)
+         aa = xi+range3-dble(i)
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i + h*aa
             xg(2) = goy + h*j
@@ -1080,7 +1080,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = xi-range3-REAL(i)
+            aa = xi-range3-dble(i)
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0
                nbndx = nbndx + 1
@@ -1102,7 +1102,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
       if ( range3 > 0.0d0 ) then
          nbndx = nbndx + 1
-         aa = xi-range3-REAL(i)
+         aa = xi-range3-dble(i)
          fedgex(nbndx) =  aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavx(1,nbndx) = i; iepsavx(2,nbndx) = j; iepsavx(3,nbndx) = k
@@ -1117,7 +1117,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front = range1**2-(zi-k)**2-(yi-j)**2
       if ( front >= 0.d0 ) then
          range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
-         aa = REAL(i+1)-xi+range3
+         aa = dble(i+1)-xi+range3
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i + h*(1-aa)
             xg(2) = goy + h*j
@@ -1141,7 +1141,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = REAL(i+1)-xi-range3
+            aa = dble(i+1)-xi-range3
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0 
                nbndx = nbndx + 1
@@ -1163,7 +1163,7 @@ subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
       if ( range3 > 0.0d0 ) then
          nbndx = nbndx + 1
-         aa = REAL(i+1)-xi-range3
+         aa = dble(i+1)-xi-range3
          fedgex(nbndx) = 1.0d0 - aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavx(1,nbndx) = i; iepsavx(2,nbndx) = j; iepsavx(3,nbndx) = k
@@ -1227,10 +1227,10 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       if ( range3 > 0.0d0 ) then
          nbndy = nbndy + 1
          if ( b == 2 ) then
-            aa = range3 - yi + REAL(j+1)
+            aa = range3 - yi + dble(j+1)
             fedgey(nbndy) = 1.0d0 - aa
          else
-            aa = range3 + yi - REAL(j)
+            aa = range3 + yi - dble(j)
             fedgey(nbndy) = aa
          end if
          epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
@@ -1246,7 +1246,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front = range1**2-(zi-k)**2-(xi-i)**2
       if ( front >= 0.d0 ) then
          range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
-         aa = yi+range3-REAL(j)
+         aa = yi+range3-dble(j)
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i 
             xg(2) = goy + h*j + h*aa
@@ -1270,7 +1270,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = yi-range3-REAL(j)
+            aa = yi-range3-dble(j)
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0
                nbndy = nbndy + 1
@@ -1292,7 +1292,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
       if ( range3 > 0.0d0 ) then
          nbndy = nbndy + 1
-         aa = yi-range3-REAL(j)
+         aa = yi-range3-dble(j)
          fedgey(nbndy) = aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavy(1,nbndy) = i; iepsavy(2,nbndy) = j; iepsavy(3,nbndy) = k
@@ -1307,7 +1307,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front =  range1**2-(zi-k)**2-(xi-i)**2
       if ( front >= 0.0d0 ) then
          range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
-         aa = -yi+range3+REAL(j+1)
+         aa = -yi+range3+dble(j+1)
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i 
             xg(2) = goy + h*j + h*fedgey(nbndy)
@@ -1331,7 +1331,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = REAL(j+1) - yi - range3
+            aa = dble(j+1) - yi - range3
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0 
                nbndy = nbndy + 1
@@ -1353,7 +1353,7 @@ subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
       if ( range3 > 0.0d0 ) then
          nbndy = nbndy + 1
-         aa = -yi-range3+REAL(j+1)
+         aa = -yi-range3+dble(j+1)
          fedgey(nbndy) = 1.0d0 - aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavy(1,nbndy) = i; iepsavy(2,nbndy) = j; iepsavy(3,nbndy) = k
@@ -1417,10 +1417,10 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       if ( range3 > 0.0d0 ) then
          nbndz = nbndz + 1
          if ( b == 2 ) then
-            aa = range3 - zi + REAL(k+1)
+            aa = range3 - zi + dble(k+1)
             fedgez(nbndz) = 1.0d0 - aa
          else
-            aa = range3 + zi - REAL(k)
+            aa = range3 + zi - dble(k)
             fedgez(nbndz) = aa
          end if
          epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
@@ -1436,7 +1436,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front = range1**2-(yi-j)**2-(xi-i)**2
       if ( front >= 0.d0 ) then
          range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
-         aa = zi+range3-REAL(k)
+         aa = zi+range3-dble(k)
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i 
             xg(2) = goy + h*j 
@@ -1460,7 +1460,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = zi-range3-REAL(k)
+            aa = zi-range3-dble(k)
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0
                nbndz = nbndz + 1
@@ -1482,7 +1482,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
       if ( range3 > 0.0d0 ) then
          nbndz = nbndz + 1
-         aa = zi-range3-REAL(k)
+         aa = zi-range3-dble(k)
          fedgez(nbndz) = aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavz(1,nbndz) = i; iepsavz(2,nbndz) = j; iepsavz(3,nbndz) = k
@@ -1497,7 +1497,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       front = range1**2-(yi-j)**2-(xi-i)**2
       if ( front >= 0.0d0 ) then
          range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
-         aa = -zi+range3+REAL(k+1)
+         aa = -zi+range3+dble(k+1)
          if ( .not. (aa < 0.d0 .or. aa > 1.d0 ) ) then 
             xg(1) = gox + h*i 
             xg(2) = goy + h*j 
@@ -1521,7 +1521,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
          zi = (arccrd(3,iatm) - goz)*rh
          range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
          if ( range3 >= 0.0d0 ) then
-            aa = -zi+REAL(k+1)-range3
+            aa = -zi+dble(k+1)-range3
             if ( .not. (aa < 0.d0 .or. aa > 1.d0) ) then
                flag_sub = 0
                nbndz = nbndz + 1 
@@ -1543,7 +1543,7 @@ subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
       range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
       if ( range3 > 0.0d0 ) then
          nbndz = nbndz + 1
-         aa = -zi-range3+REAL(k+1)
+         aa = -zi-range3+dble(k+1)
          fedgez(nbndz) = 1.0d0 - aa
          epsint = (depsin*depsout)/(depsin*(1.0d0-aa) + depsout*aa)
          iepsavz(1,nbndz) = i; iepsavz(2,nbndz) = j; iepsavz(3,nbndz) = k
@@ -1641,9 +1641,9 @@ subroutine epsfracx_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i,j,k) is inside, f2 < 0 and f3 > 0 
 
    if ( a > 0 ) then
-      x1 = REAL(i-1)
-      x2 = REAL(i  )
-      x3 = REAL(i+1)
+      x1 = dble(i-1)
+      x2 = dble(i  )
+      x3 = dble(i+1)
       f1 = u(i-1,j,k)
       f2 = u(i  ,j,k)
       f3 = u(i+1,j,k)
@@ -1653,9 +1653,9 @@ subroutine epsfracx_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i+1,j,k) is inside, f2 < 0 and f1 > 0 
 
    if ( b > 0 ) then
-      x1 = REAL(i  )
-      x2 = REAL(i+1)
-      x3 = REAL(i+2)
+      x1 = dble(i  )
+      x2 = dble(i+1)
+      x3 = dble(i+2)
       f1 = u(i  ,j,k)
       f2 = u(i+1,j,k)
       f3 = u(i+2,j,k)
@@ -1668,7 +1668,7 @@ subroutine epsfracx_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
       aa = real(i+1) - t
    end if
 
-   fedgex(nbndx) = t - REAL(i)
+   fedgex(nbndx) = t - dble(i)
    epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
 
 
@@ -1695,9 +1695,9 @@ subroutine epsfracy_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i,j,k) is inside, f2 < 0 and f3 > 0 
 
    if ( a > 0 ) then
-      x1 = REAL(j-1)
-      x2 = REAL(j  )
-      x3 = REAL(j+1)
+      x1 = dble(j-1)
+      x2 = dble(j  )
+      x3 = dble(j+1)
       f1 = u(i,j-1,k)
       f2 = u(i,j  ,k)
       f3 = u(i,j+1,k)
@@ -1707,9 +1707,9 @@ subroutine epsfracy_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i,j+1,k) is inside, f2 < 0 and f1 > 0
 
    if ( b > 0 ) then
-      x1 = REAL(j  )
-      x2 = REAL(j+1)
-      x3 = REAL(j+2)
+      x1 = dble(j  )
+      x2 = dble(j+1)
+      x3 = dble(j+2)
       f1 = u(i,j  ,k)
       f2 = u(i,j+1,k)
       f3 = u(i,j+2,k)
@@ -1717,12 +1717,12 @@ subroutine epsfracy_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    end if
 
    if ( a > 0 ) then
-      aa = t - REAL(j)
+      aa = t - dble(j)
    else
-      aa = REAL(j+1) - t
+      aa = dble(j+1) - t
    end if
 
-   fedgey(nbndy) = t - REAL(j)
+   fedgey(nbndy) = t - dble(j)
    epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
 
 end subroutine epsfracy_r
@@ -1748,9 +1748,9 @@ subroutine epsfracz_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i,j,k) is inside, f2 < 0 and f3 > 0 
 
    if ( a > 0 ) then
-      x1 = REAL(k-1)
-      x2 = REAL(k)
-      x3 = REAL(k+1)
+      x1 = dble(k-1)
+      x2 = dble(k)
+      x3 = dble(k+1)
       f1 = u(i,j,k-1)
       f2 = u(i,j,k)
       f3 = u(i,j,k+1)
@@ -1760,9 +1760,9 @@ subroutine epsfracz_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    ! if (i,j,k+1) is inside, f2 < 0 and f1 > 0
 
    if ( b > 0 ) then
-      x1 = REAL(k)
-      x2 = REAL(k+1)
-      x3 = REAL(k+2)
+      x1 = dble(k)
+      x2 = dble(k+1)
+      x3 = dble(k+2)
       f1 = u(i,j,k)
       f2 = u(i,j,k+1)
       f3 = u(i,j,k+2)
@@ -1770,12 +1770,12 @@ subroutine epsfracz_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    end if
 
    if ( a > 0 ) then
-      aa = t - REAL(k)
+      aa = t - dble(k)
    else
-      aa = REAL(k+1) - t
+      aa = dble(k+1) - t
    end if
 
-   fedgez(nbndz) =  t - REAL(k)
+   fedgez(nbndz) =  t - dble(k)
    epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
 
 

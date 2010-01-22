@@ -445,9 +445,9 @@ subroutine pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,natom,pbfrc,eelrf,ionene,
          icrd(1,iatm) = floor(gcrd(1,iatm))
          icrd(2,iatm) = floor(gcrd(2,iatm))
          icrd(3,iatm) = floor(gcrd(3,iatm))
-         fcrd(1,iatm) =  REAL(icrd(1,iatm))
-         fcrd(2,iatm) =  REAL(icrd(2,iatm))
-         fcrd(3,iatm) =  REAL(icrd(3,iatm))
+         fcrd(1,iatm) =  dble(icrd(1,iatm))
+         fcrd(2,iatm) =  dble(icrd(2,iatm))
+         fcrd(3,iatm) =  dble(icrd(3,iatm))
       end do
       do iatm = 1, natom
          aa = gcrd(1,iatm) - fcrd(1,iatm)
@@ -1005,7 +1005,7 @@ subroutine get_coulpot(i,j,k,pot)
          rinv = green(idx,idy,idz)
          pot = pot + qtmp*rinv
       else
-         rinv = ONE/sqrt(REAL(idx**2 + idy**2 + idz**2))
+         rinv = ONE/sqrt(dble(idx**2 + idy**2 + idz**2))
          pot = pot + qtmp*rinv
       end if
    end do  !  iatm = 1, ngrdcrg
@@ -1095,7 +1095,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,j,1 ) = bv(i,j,1 ) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,j,1 ) = bv(i,j,1 ) + exp(pbkappa*(-h*r))*qtmp/r
             end if
              
@@ -1104,7 +1104,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,j,zm) = bv(i,j,zm) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,j,zm) = bv(i,j,zm) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1117,7 +1117,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,1 ,k) = bv(i,1 ,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,1 ,k) = bv(i,1 ,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
               
@@ -1126,7 +1126,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,ym,k) = bv(i,ym,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,ym,k) = bv(i,ym,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1139,7 +1139,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(1 ,j,k) = bv(1 ,j,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(1 ,j,k) = bv(1 ,j,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
             
@@ -1148,7 +1148,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(xm,j,k) = bv(xm,j,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(xm,j,k) = bv(xm,j,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1183,7 +1183,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,j,1 ) = bv(i,j,1 ) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,j,1 ) = bv(i,j,1 ) + exp(pbkappa*(-h*r))*qtmp/r
             end if
  
@@ -1193,7 +1193,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,j,zm) = bv(i,j,zm) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,j,zm) = bv(i,j,zm) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1206,7 +1206,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,1 ,k) = bv(i,1 ,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,1 ,k) = bv(i,1 ,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
               
@@ -1215,7 +1215,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(i,ym,k) = bv(i,ym,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(i,ym,k) = bv(i,ym,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1228,7 +1228,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(1 ,j,k) = bv(1 ,j,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(1 ,j,k) = bv(1 ,j,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
             
@@ -1237,7 +1237,7 @@ subroutine pb_bndcnd( bv, sbv )
                rinv = green(idx,idy,idz)
                bv(xm,j,k) = bv(xm,j,k) + exp(pbkappa*(-h/rinv))*qtmp*rinv
             else
-               r = sqrt(REAL(idx**2 + idy**2 + idz**2))
+               r = sqrt(dble(idx**2 + idy**2 + idz**2))
                bv(xm,j,k) = bv(xm,j,k) + exp(pbkappa*(-h*r))*qtmp/r
             end if
          end do; end do
@@ -1258,14 +1258,14 @@ subroutine pb_bndcnd( bv, sbv )
          x  = gox + h*i        ; y  = goy + h*j        ; z  = goz
          xi = (x - goxtmp)/htmp; yi = (y - goytmp)/htmp; zi = (z - goztmp)/htmp
          ix = int( xi )        ; iy = int( yi )        ; iz = int( zi )
-         aa  = xi - REAL( ix ); bb  = yi - REAL( iy ); cc  = zi - REAL( iz )
+         aa  = xi - dble( ix ); bb  = yi - dble( iy ); cc  = zi - dble( iz )
          aa1 = ONE - aa       ; bb1 = ONE - bb       ; cc1 = ONE - cc
          bv(i,j,1 ) = bv(i,j,1 ) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
          z  = goz + h*(zm+1)
          zi = (z - goztmp)/htmp
          iz = int( zi )
-         cc  = zi - REAL( iz )
+         cc  = zi - dble( iz )
          cc1 = ONE - cc
          bv(i,j,zm) = bv(i,j,zm) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
@@ -1278,14 +1278,14 @@ subroutine pb_bndcnd( bv, sbv )
          x  = gox + h*i        ; y  = goy              ; z  = goz + h*k
          xi = (x - goxtmp)/htmp; yi = (y - goytmp)/htmp; zi = (z - goztmp)/htmp
          ix = int( xi )        ; iy = int( yi )        ; iz = int( zi )
-         aa = xi - REAL( ix ); bb = yi - REAL( iy ); cc = zi - REAL( iz )
+         aa = xi - dble( ix ); bb = yi - dble( iy ); cc = zi - dble( iz )
          aa1 = ONE - aa      ; bb1 = ONE - bb      ; cc1 = ONE - cc
          bv(i,1 ,k) = bv(i,1 ,k) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
          y  = goy + h*(ym+1)
          yi = (y - goytmp)/htmp
          iy = int( yi )
-         bb  = yi - REAL( iy )
+         bb  = yi - dble( iy )
          bb1 = ONE - bb
          bv(i,ym,k) = bv(i,ym,k) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
@@ -1298,14 +1298,14 @@ subroutine pb_bndcnd( bv, sbv )
          x  = gox              ; y  = goy + h*j        ; z  = goz + h*k
          xi = (x - goxtmp)/htmp; yi = (y - goytmp)/htmp; zi = (z - goztmp)/htmp
          ix = int( xi )        ; iy = int( yi )        ; iz = int( zi )
-         aa  = xi - REAL( ix ); bb  = yi - REAL( iy ); cc  = zi - REAL( iz )
+         aa  = xi - dble( ix ); bb  = yi - dble( iy ); cc  = zi - dble( iz )
          aa1 = ONE - aa       ; bb1 = ONE - bb       ; cc1 = ONE - cc
          bv(1 ,j,k) = bv(1 ,j,k) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
          x  = gox + h * (xm+1)
          xi = (x - goxtmp)/htmp
          ix = int( xi )
-         aa  = xi - REAL( ix )
+         aa  = xi - dble( ix )
          aa1 = ONE - aa
          bv(xm,j,k) = bv(xm,j,k) + epsout*phintp( xmtmp, ymtmp, zmtmp, ix, iy, iz, aa, bb, cc, aa1, bb1, cc1 )
           
@@ -1860,7 +1860,7 @@ subroutine get_coulpot(i,j,k,pot)
          rinv = green(idx,idy,idz)
          pot = pot + qtmp*rinv
       else
-         rinv = ONE/sqrt(REAL(idx**2 + idy**2 + idz**2))
+         rinv = ONE/sqrt(dble(idx**2 + idy**2 + idz**2))
          pot = pot + qtmp*rinv
       end if
    end do  !  iatm = 1, ngrdcrg

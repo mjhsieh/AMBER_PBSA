@@ -197,7 +197,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
       write(6,'(a)') "PB Warnning: natom**2 exceeds integer limit (2147483647)."
       maxmax = 2147483647
    else
-      maxmax = ceiling(REAL(natom)/2*REAL(natom))
+      maxmax = ceiling(dble(natom)/2*dble(natom))
    endif
    if ( maxnba > maxmax ) maxnba = maxmax
    if ( maxnbr > maxmax ) maxnbr = maxmax

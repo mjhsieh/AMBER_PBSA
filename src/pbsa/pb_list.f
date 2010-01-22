@@ -672,13 +672,13 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
    savzm(1) = nint(zlength/savh(1))
    if ( solvopt == 2 ) then
 !     if NT-MG and mg_level=4
-      savxm(1) = 16*ceiling( REAL(savxm(1))/16.0 ) - 1
-      savym(1) = 16*ceiling( REAL(savym(1))/16.0 ) - 1
-      savzm(1) = 16*ceiling( REAL(savzm(1))/16.0 ) - 1   
+      savxm(1) = 16*ceiling( dble(savxm(1))/16.0 ) - 1
+      savym(1) = 16*ceiling( dble(savym(1))/16.0 ) - 1
+      savzm(1) = 16*ceiling( dble(savzm(1))/16.0 ) - 1   
    else
-      savxm(1) = 2*nint( REAL(savxm(1))*HALF ) + 1
-      savym(1) = 2*nint( REAL(savym(1))*HALF ) + 1
-      savzm(1) = 2*nint( REAL(savzm(1))*HALF ) + 1
+      savxm(1) = 2*nint( dble(savxm(1))*HALF ) + 1
+      savym(1) = 2*nint( dble(savym(1))*HALF ) + 1
+      savzm(1) = 2*nint( dble(savzm(1))*HALF ) + 1
    end if
    savxmym(1) = savxm(1)*savym(1)
    savxmymzm(1) = savxmym(1)*savzm(1)
@@ -686,18 +686,18 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
       ' Grid dimension at level ', 1, savxm(1),savym(1),savzm(1)
     
    if ( initial ) then
-      savgox(1) = - REAL(savxm(1)+1) * savh(1) * HALF + xbox
-      savgoy(1) = - REAL(savym(1)+1) * savh(1) * HALF + ybox
-      savgoz(1) = - REAL(savzm(1)+1) * savh(1) * HALF + zbox
+      savgox(1) = - dble(savxm(1)+1) * savh(1) * HALF + xbox
+      savgoy(1) = - dble(savym(1)+1) * savh(1) * HALF + ybox
+      savgoz(1) = - dble(savzm(1)+1) * savh(1) * HALF + zbox
    else
       cxbox(1) = savxbox(1) + nint( (xbox - savxbox(1))/savh(1) )*savh(1)
       cybox(1) = savybox(1) + nint( (ybox - savybox(1))/savh(1) )*savh(1)
       czbox(1) = savzbox(1) + nint( (zbox - savzbox(1))/savh(1) )*savh(1)
       if ( verbose .and. prnt ) write(6, '(a,i5,1x,3f10.3)') &
          ' Box center corrected at level ', 1, cxbox(1), cybox(1), czbox(1)
-      savgox(1) = - REAL(savxm(1)+1) * savh(1) * HALF + cxbox(1)
-      savgoy(1) = - REAL(savym(1)+1) * savh(1) * HALF + cybox(1)
-      savgoz(1) = - REAL(savzm(1)+1) * savh(1) * HALF + czbox(1)
+      savgox(1) = - dble(savxm(1)+1) * savh(1) * HALF + cxbox(1)
+      savgoy(1) = - dble(savym(1)+1) * savh(1) * HALF + cybox(1)
+      savgoz(1) = - dble(savzm(1)+1) * savh(1) * HALF + czbox(1)
    end if
    if ( verbose .and. prnt ) write(6, '(a,i5,1x,3f10.3)') &
       ' Grid origin corrected at level ', 1, savgox(1),savgoy(1),savgoz(1)
@@ -717,31 +717,31 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
       savzm(l) = nint( zlength/savh(l) ) + nbuffer
       if ( solvopt == 2 ) then
 !        if NT-MG and mg_level=4
-         savxm(l) = 16*ceiling( REAL(savxm(l))/16.0 ) - 1
-         savym(l) = 16*ceiling( REAL(savym(l))/16.0 ) - 1
-         savzm(l) = 16*ceiling( REAL(savzm(l))/16.0 ) - 1   
+         savxm(l) = 16*ceiling( dble(savxm(l))/16.0 ) - 1
+         savym(l) = 16*ceiling( dble(savym(l))/16.0 ) - 1
+         savzm(l) = 16*ceiling( dble(savzm(l))/16.0 ) - 1   
       else
-         savxm(l) = 2*nint( REAL(savxm(l))*HALF ) + 1
-         savym(l) = 2*nint( REAL(savym(l))*HALF ) + 1
-         savzm(l) = 2*nint( REAL(savzm(l))*HALF ) + 1
+         savxm(l) = 2*nint( dble(savxm(l))*HALF ) + 1
+         savym(l) = 2*nint( dble(savym(l))*HALF ) + 1
+         savzm(l) = 2*nint( dble(savzm(l))*HALF ) + 1
       end if
       savxmym(l) = savxm(l)*savym(l)
       savxmymzm(l) = savxmym(l)*savzm(l)
       if ( verbose .and. prnt ) write(6, '(a,i5,1x,3i5)') &
          ' Grid dimension at level ', l, savxm(l), savym(l), savzm(l)
       if ( initial ) then
-         savgox(l) = - REAL(savxm(l)+1) * savh(l) * HALF + xbox
-         savgoy(l) = - REAL(savym(l)+1) * savh(l) * HALF + ybox
-         savgoz(l) = - REAL(savzm(l)+1) * savh(l) * HALF + zbox
+         savgox(l) = - dble(savxm(l)+1) * savh(l) * HALF + xbox
+         savgoy(l) = - dble(savym(l)+1) * savh(l) * HALF + ybox
+         savgoz(l) = - dble(savzm(l)+1) * savh(l) * HALF + zbox
       else
          cxbox(l) = savxbox(l) + nint( (xbox - savxbox(l))/savh(l) )*savh(l)
          cybox(l) = savybox(l) + nint( (ybox - savybox(l))/savh(l) )*savh(l)
          czbox(l) = savzbox(l) + nint( (zbox - savzbox(l))/savh(l) )*savh(l)
          if ( verbose .and. prnt ) write(6, '(a,i5,1x,3f10.3)') &
             ' Box center corrected at level ', l, cxbox(l), cybox(l), czbox(l)
-         savgox(l) = - REAL(savxm(l)+1) * savh(l) * HALF + cxbox(l)
-         savgoy(l) = - REAL(savym(l)+1) * savh(l) * HALF + cybox(l)
-         savgoz(l) = - REAL(savzm(l)+1) * savh(l) * HALF + czbox(l)
+         savgox(l) = - dble(savxm(l)+1) * savh(l) * HALF + cxbox(l)
+         savgoy(l) = - dble(savym(l)+1) * savh(l) * HALF + cybox(l)
+         savgoz(l) = - dble(savzm(l)+1) * savh(l) * HALF + czbox(l)
       end if
       if ( verbose .and. prnt ) write(6, '(a,i5,1x,3f10.3)') &
          ' Grid origin corrected at level ', l, savgox(l), savgoy(l), savgoz(2)
