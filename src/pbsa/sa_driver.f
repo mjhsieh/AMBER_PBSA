@@ -520,6 +520,9 @@ subroutine pb_aaradi( natom, nbonh, ibh, jbh, radi, acrg, ucrgh, ucrga, resid, i
            isymbl(iatm)(1:1) == 'n' .or. &
            isymbl(iatm)(1:1) == 'o' .or. &
            isymbl(iatm)(1:1) == 'p' .or. &
+           isymbl(iatm)(1:1) == 'f' .or. &
+           isymbl(iatm)(1:1) == 'b' .or. &
+           isymbl(iatm)(1:1) == 'i' .or. &
            isymbl(iatm)(1:1) == 's' ) radi(iatm) = rin(iatm)
    end do
 
