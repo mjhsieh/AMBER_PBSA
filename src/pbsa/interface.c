@@ -9,6 +9,7 @@
 typedef	int	_INT_;
 typedef	char	_STRING_;
 typedef double	_REAL_;
+extern FILE *nabout;
 
 typedef enum { FALSE, TRUE } boolean;
 
@@ -44,9 +45,6 @@ typedef struct pbsa_opts {
 	_REAL_ ivalence, radinc, expthresh, sepbuf;
 } PBSA_OPTSSTRUCT_T;
 
-
-extern FILE *nabout;
-
 typedef struct parm {
 	char	ititl[81];
 	_INT_ 	IfBox, Nmxrs, IfCap,
@@ -73,76 +71,76 @@ PBSA_OPTSSTRUCT_T *pbsa_init(){
 	PBSA_OPTSSTRUCT_T *myoptions;
 	myoptions=(PBSA_OPTSSTRUCT_T *) malloc(sizeof(PBSA_OPTSSTRUCT_T));
 
-	myoptions->imin	= 0;
-	myoptions->ipb		= 0;
-	myoptions->inp		= 0;
+	myoptions->imin			= 0;
+	myoptions->ipb			= 0;
+	myoptions->inp			= 0;
+	
+	myoptions->epsin		= 1.0;
+	myoptions->epsout		= 80.0;
+	myoptions->istrng		= 0.0;
+	myoptions->pbtemp		= 300.0;
+	myoptions->dprob		= 0.00;
+	myoptions->iprob		= 2.00;
+	myoptions->arcres		= 0.5;
+	myoptions->smoothopt		= 0;
+	myoptions->radiopt		= 1;
 
-	myoptions->epsin	= 1.0;
-	myoptions->epsout	= 80.0;
-	myoptions->istrng	= 0.0;
-	myoptions->pbtemp	= 300.0;
-	myoptions->dprob	= 0.00;
-	myoptions->iprob	= 2.00;
-	myoptions->arcres	= 0.5;
-	myoptions->smoothopt	= 0;
-	myoptions->radiopt	= 1;
+	myoptions->npbopt		= 0;
+	myoptions->solvopt		= 2;
+	myoptions->maxitn		= 100;
+	myoptions->nbuffer		= 0;
+	myoptions->fscale		= 8;
+	myoptions->npbgrid		= 1;
+	myoptions->nfocus		= 2;
+	myoptions->accept		= 0.001;
+	myoptions->fillratio		= 2.0;
+	myoptions->space		= 0.5;
+	myoptions->laccept		= 0.1;
+	myoptions->fmiccg		= -0.30;
+	myoptions->wsor			= 1.9;
+	myoptions->lwsor		= 1.95;
+	myoptions->offx			= 0.0;
+	myoptions->offy			= 0.0;
+	myoptions->offz			= 0.0;
 
-	myoptions->npbopt	= 0;
-	myoptions->solvopt	= 2;
-	myoptions->maxitn	= 100;
-	myoptions->nbuffer	= 0;
-	myoptions->fscale	= 8;
-	myoptions->npbgrid	= 1;
-	myoptions->nfocus	= 2;
-	myoptions->accept	= 0.001;
-	myoptions->fillratio	= 2.0;
-	myoptions->space	= 0.5;
-	myoptions->laccept	= 0.1;
-	myoptions->fmiccg	= -0.30;
-	myoptions->wsor	= 1.9;
-	myoptions->lwsor	= 1.95;
-	myoptions->offx	= 0.0;
-	myoptions->offy	= 0.0;
-	myoptions->offz	= 0.0;
+	myoptions->bcopt		= 5;
+	myoptions->eneopt		= -1;
+	myoptions->frcopt		= 0;
+	myoptions->dbfopt		= -1;
+	myoptions->scalec		= 0;
+	myoptions->nsnbr		= 1;
+	myoptions->nsnba		= 1;
+	myoptions->cutres		= 12.0;
+	myoptions->cutfd		= 5.0;
+	myoptions->cutnb		= 0.0;
+	myoptions->cutsa		= 9.0;
 
-	myoptions->bcopt	= 5;
-	myoptions->eneopt	= -1;
-	myoptions->frcopt	= 0;
-	myoptions->dbfopt	= -1;
-	myoptions->scalec	= 0;
-	myoptions->nsnbr	= 1;
-	myoptions->nsnba	= 1;
-	myoptions->cutres	= 12.0;
-	myoptions->cutfd	= 5.0;
-	myoptions->cutnb	= 0.0;
-	myoptions->cutsa	= 9.0;
+	myoptions->phiout		= 0;
+	myoptions->phiform		= 0;
+	myoptions->npbverb		= 0;
 
-	myoptions->phiout	= 0;
-	myoptions->phiform	= 0;
-	myoptions->npbverb	= 0;
+	myoptions->decompopt		= 1;
+	myoptions->use_rmin		= 0;
+	myoptions->use_sav		= 0;
+	myoptions->maxsph		= 400;
 
-	myoptions->decompopt	= 1;
-	myoptions->use_rmin	= 0;
-	myoptions->use_sav	= 0;
-	myoptions->maxsph	= 400;
-
-	myoptions->sprob	= 1.60;
-	myoptions->vprob	= 1.28;
-	myoptions->rhow_effect	= 1.0;
+	myoptions->sprob		= 1.60;
+	myoptions->vprob		= 1.28;
+	myoptions->rhow_effect		= 1.0;
 	myoptions->cavity_surften	= 0.04356;
 	myoptions->cavity_offset	= 0.008;
 
 	//undocumented
-	myoptions->npopt	= 2;
-	myoptions->mpopt	= 0;
-	myoptions->ndofd	= 1;
-	myoptions->ndosas	= 1;
-	myoptions->lmax	= 80;
-	myoptions->ivalence	= 1.0;
-	myoptions->radinc	= myoptions->sprob*0.5;
-	myoptions->maxarc	= 256;
-	myoptions->expthresh	= 0.2;
-	myoptions->sepbuf	= 4.0;
+	myoptions->npopt		= 2;
+	myoptions->mpopt		= 0;
+	myoptions->ndofd		= 1;
+	myoptions->ndosas		= 1;
+	myoptions->lmax			= 80;
+	myoptions->ivalence		= 1.0;
+	myoptions->radinc		= myoptions->sprob*0.5;
+	myoptions->maxarc		= 256;
+	myoptions->expthresh		= 0.2;
+	myoptions->sepbuf		= 4.0;
 
 	return (myoptions); 
 }

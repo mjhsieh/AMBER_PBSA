@@ -429,16 +429,13 @@ subroutine exdensph(ip,insph,packing,dens,atmctr )
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+   implicit none
    ! Passed variables
 
    integer nn
    integer insph(xm,ym,zm)
    _REAL_ packing(xm,ym,zm), dens(xm,ym,zm)
    _REAL_ atmctr(xm,ym,zm)
-
-   ! external function
-
-   _REAL_ density
 
    ! Local variables
     
