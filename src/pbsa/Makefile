@@ -21,6 +21,8 @@ OBJ=dsvdc.o  pbsa.o pb_read.o pb_write.o getcoor.o \
 	pb_exmol.o pb_mpfrc.o pb_direct.o pb_list.o timer.o \
 	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o
 
+mytest: cpbsa$(SFX)
+
 all: pbsa$(SFX)
 
 install: pbsa$(SFX)
@@ -32,6 +34,9 @@ uninstall:
 #---------------------------------------------------------------------------
 pbsa$(SFX): $(OBJ) syslib netlib c9x-complex
 	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
+
+cpbsa$(SFX): interface.o
+	$(CC) -o cpbsa interface.o
 
 syslib:
 	cd ../lib && $(MAKE) nxtsec.o
