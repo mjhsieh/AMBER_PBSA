@@ -429,7 +429,6 @@ subroutine exdensph(ip,insph,packing,dens,atmctr )
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   implicit none
    ! Passed variables
 
    integer nn
