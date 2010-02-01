@@ -21,7 +21,8 @@ is_amberhome_defined:
 
 clean:
 	(find pbsa_* -name '*.out' -o -name '*.dat' -o \
-        -name "*.dif" | \
+	-name '*.dif' -o -name 'mdin' -o -name 'min.in' \
+	-o -name 'mdout.*.min' | \
 	while read dif ;\
 	do \
 	    rm -f $$dif ;\
