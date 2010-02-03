@@ -109,7 +109,7 @@ subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
    !character (len=4) :: isymbl(natom)
    _REAL_ prob, r(natom), rp(natom), rp2(natom)
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     
@@ -263,7 +263,7 @@ subroutine pb_aaradi( natom, nbonh, ibh, jbh, radi, acrg, ucrgh, ucrga, resid, i
    character (len=4) :: resid(*), igraph(*), isymbl(*)
    _REAL_ radi(*), acrg(*), ucrgh(*), ucrga(*), rin(*)
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     
@@ -559,7 +559,7 @@ subroutine sa_sphere(maxsph, scrd)
    integer maxsph
    _REAL_ scrd(3, *)
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
 
@@ -604,7 +604,7 @@ subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag
    integer iar1pb(6,0:natom), iprshrt(*), nex(natom), iex(32,natom)
    _REAL_ acrd(3,1:natom)
     
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     
@@ -685,7 +685,7 @@ subroutine sa_srf( verbose,pbprint,natom )
    logical verbose, pbprint
    integer natom
     
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     
@@ -980,7 +980,7 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
    integer natom, msrf, fstsph(*), lstsph(*)
    _REAL_ cstep
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
     
    ! Local variables
@@ -1119,7 +1119,7 @@ subroutine exclud( natom,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,sp
    integer fstsph(*), lstsph(*), fstsph1(*), lstsph1(*), spharc(*), spharc1(*)
    _REAL_ sphcrd(3,*), sphcrd1(3,*)
 
-#  include "constants.h"
+#  include "pb_constants.h"
     
    integer jp, iatm, jatm, ilast, jfirst, jlast, isph, jsph
    _REAL_ xi, yi, zi, xj, yj, zj
@@ -1207,7 +1207,7 @@ subroutine sa_vol( verbose,pbprint,natom )
    logical verbose, pbprint
    integer natom
     
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     
@@ -1326,7 +1326,7 @@ subroutine exsasph( xm,ym,zm,range1,xi,yi,zi,insph )
    integer  insph(xm,ym,zm)
    _REAL_ range1, xi, yi, zi
  
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! Local variables
     

@@ -15,7 +15,7 @@ module dispersion_cavity
 
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    logical donpsa
    integer npopt

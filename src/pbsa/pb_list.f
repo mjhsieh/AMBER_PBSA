@@ -70,7 +70,7 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
    _REAL_ cutres
    _REAL_ x(3,*)
 
-#  include "constants.h"
+#  include "pb_constants.h"
      
    ! Local variables
      
@@ -316,7 +316,7 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
    _REAL_ cn1pb(*), cn2pb(*), cn3pb(*)
    _REAL_ cutnb, cutsa, cutfd
 
-#  include "constants.h"
+#  include "pb_constants.h"
     
    ! Local variables
     

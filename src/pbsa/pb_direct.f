@@ -23,7 +23,7 @@ subroutine pb_directnocut( natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1
    _REAL_ x(3,natom)
    _REAL_ enb, eel, f(3,natom)
 
-#  include "constants.h"
+#  include "pb_constants.h"
     
    ! Local variables
     
@@ -499,7 +499,7 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
    _REAL_ f(3,natom)
    _REAL_ eel, enb
 
-#  include "constants.h"
+#  include "pb_constants.h"
     
    ! Local variables
     

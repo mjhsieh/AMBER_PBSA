@@ -6,7 +6,7 @@ module pb_nlsolver
 
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    logical uconvg
    integer xm, ym, zm, xmym, xmymzm

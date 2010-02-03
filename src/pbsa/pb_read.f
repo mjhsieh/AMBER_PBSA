@@ -7,7 +7,7 @@ subroutine mdread1()
    
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 #  include "timer.h"
 #  include "extra.h"
 #  include "files.h"
@@ -201,7 +201,7 @@ subroutine mdread2(x,ix,ih)
    integer inerr
    integer ipol,iesp,nmropt
 
-#  include "constants.h"
+#  include "pb_constants.h"
 #  include "timer.h"
 #  include "extra.h"
 #  include "files.h"

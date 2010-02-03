@@ -10,7 +10,7 @@ subroutine runmin(xx,ix,ih,ipairs,x,fg,w,ib,jb,conp, &
 
    ! global variables
 
-#  include "constants.h"
+#  include "pb_constants.h"
 #  include "md.h"
 #  include "box.h"
 #  include "files.h"

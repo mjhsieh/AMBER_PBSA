@@ -6,7 +6,7 @@ module pb_lsolver
 
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    integer l_xm, l_ym, l_zm, l_xmym, l_xmymzm
    _REAL_ l_fmiccg,l_wsor

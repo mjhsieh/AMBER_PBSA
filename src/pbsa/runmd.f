@@ -23,7 +23,7 @@ subroutine runmd(xx,ix,ih,ipairs,x,winv,amass,f, &
 #  include "memory.h"
 #  include "extra.h"
 #  include "timer.h"
-#  include "constants.h"
+#  include "pb_constants.h"
 #  include "pb_md.h"
 !#  include "../lib/random.h"   
 #  include "parms.h"

@@ -152,7 +152,7 @@ end subroutine pb_ionmap
 subroutine pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
               smoothopt,dprob,epsin,epsout,&
               h,gox,goy,goz,xm,ym,zm,xmymzm,level,nfocus,&
-              nwarn,nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
+              nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
               gcrd,acrd,radi,radip3,nzratm,&
               marc,m2narc,fstarc,arcatm,dotarc,arccrd,savarc,&
               atmsas,insas,lvlset,zv,epsx,epsy,epsz,&
@@ -167,7 +167,7 @@ subroutine pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
    _REAL_ dprob, epsin, epsout
    _REAL_ h, gox, goy, goz
    integer xm, ym, zm, xmymzm, level, nfocus
-   integer nwarn, nsatm, narcdot, maxarc
+   integer nsatm, narcdot, maxarc
    integer nbnd, nbndx, nbndy, nbndz
    _REAL_ gcrd(3,*), acrd(3,*), radi(*), radip3(*)
    integer nzratm(*), marc(*), m2narc(maxarc,*), fstarc(*), arcatm(2,*), dotarc(*)
@@ -180,7 +180,7 @@ subroutine pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
  
    ! Local variables
 
-   integer ip, iatm, buf
+   integer ip, iatm, buf, nwarn
    _REAL_ xi, yi, zi
    _REAL_ range1, rh
  
@@ -252,7 +252,6 @@ subroutine pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
          xi = (arccrd(1,iatm) - gox)*rh; yi = (arccrd(2,iatm) - goy)*rh; zi = (arccrd(3,iatm) - goz)*rh
          call exresph( -1, insas, atmsas, zv(1) )
       end do
- 
 
    ! modified vdw surface to approximate ses at the coarse level
  
@@ -1659,9 +1658,9 @@ subroutine epsfracx_r( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout, u )
    end if
 
    if ( a > 0 ) then
-      aa = t - real(i)
+      aa = t - dble(i)
    else
-      aa = real(i+1) - t
+      aa = dble(i+1) - t
    end if
 
    fedgex(nbndx) = t - dble(i)

@@ -8,7 +8,7 @@ module poisson_boltzmann
 
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! PBMD parameters
 
@@ -28,7 +28,6 @@ module poisson_boltzmann
    integer :: dbfopt
    integer :: eneopt
    integer :: frcopt
-   integer :: frcdump
    integer :: solvopt
    integer :: npbopt
    integer :: bcopt
@@ -39,7 +38,6 @@ module poisson_boltzmann
    integer :: xmym
    integer :: xmymzm
    integer :: nbuffer
-   integer :: nwarn
    integer :: level
    integer :: nfocus
    integer :: fscale
@@ -138,6 +136,12 @@ module poisson_boltzmann
    integer :: lmax
    integer :: inatm
    integer :: outatm
+   integer :: outwat
+   integer :: oution
+   integer, allocatable :: outflag(:)
+   integer, allocatable :: outflagrig(:)
+   integer, allocatable :: mapout(:)
+   integer, allocatable :: ibelly(:)
    _REAL_  :: sepbuf
 
    ! physical variables for energy and force calculations
@@ -485,7 +489,7 @@ subroutine pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,natom,pbfrc,eelrf,ionene,
          call pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
               smoothopt,dprob,epsin,epsout,&
               h,gox,goy,goz,xm,ym,zm,xmymzm,level,nfocus,&
-              nwarn,nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
+              nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
               gcrd,acrd,radi,radip3,nzratm,&
               marc,m2narc,fstarc,arcatm,dotarc,arccrd,savarc,&
               atmsas,insas,lvlset,zv,epsx,epsy,epsz,&
@@ -1874,7 +1878,7 @@ subroutine pb_dbfrc_fld(verbose,eneout,natom,f,epsx,epsy,epsz,phi)
    use solvent_accessibility, only : radi, arccrd, dotarc, arcatm
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! passed variables
 
@@ -1978,7 +1982,7 @@ subroutine pb_dbfrc_crg( verbose,eneout,natom,eelrf,f,epsx,epsy,epsz,insas,phi,s
    use solvent_accessibility, only : dprob, radi, arccrd, dotarc, arcatm
    implicit none
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! passed variables
 
@@ -2127,7 +2131,7 @@ subroutine pb_dbfrc_fld2( verbose,eneout,natom,eel,f,epsx,epsy,epsz,insas,phi,sb
 
    use solvent_accessibility, only : dprob, radi, arccrd, dotarc, arcatm
 
-#  include "constants.h"   
+#  include "pb_constants.h"   
 
    ! Passed variables
 
@@ -2476,7 +2480,7 @@ end subroutine gradu
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine get_charge_pol(nbnd,phi,cphi,sbv,pol_charge,srfcrg)
 
-#  include "constants.h"
+#  include "pb_constants.h"
 
    ! passed variables
    

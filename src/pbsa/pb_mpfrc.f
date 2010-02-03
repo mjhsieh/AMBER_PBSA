@@ -22,7 +22,7 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
    _REAL_ epsin, epsout, cg(natom), x(3,natom)
    _REAL_ f(3,natom), eel
 
-#  include "constants.h"
+#  include "pb_constants.h"
     
    ! local variables
     

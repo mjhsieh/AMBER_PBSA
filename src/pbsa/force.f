@@ -20,7 +20,7 @@ subroutine force(xx,ix,ih,ipairs,x,f,ener,vir,r_stack,i_stack, &
    character(len=4) ih(*)
    _REAL_ fs(*),rborn(*),reff(*)!,dvdl
 
-#  include "constants.h"
+#  include "pb_constants.h"
 #  include "timer.h"
 #  include "md.h"
 #  include "box.h"
