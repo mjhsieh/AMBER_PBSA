@@ -125,19 +125,20 @@ PBSA_OPTSSTRUCT_T *pbsa_init(){
 }
 
 
-REAL_T epbsa(int ipb, REAL_T fillratio, INT_T natom,
-	       int nres, int ntype, int *ipres, int *iac,
-	       int ico, REAL_T *x){
-        REAL_T e_PBSA;
+// int ix(i02) RESIDUE_POINTER
+// int ix(i04) ATOM_TYPE_INDEX
+// int ix(i06) INDEX TO N-B TYPE
+// pb_force_(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),ix(i10),cn1,cn2,xx(l15),x,f,evdw,eelt,epol)
+REAL_T epbsa(int ipb, REAL_T fillratio,
+	     INT_T natom, INT_T nres, INT_T ntype,  INT_T *ipres,
+	     INT_T *iac,  INT_T *ico, INT_T *natex, INT_T *cn1,
+	     INT_T *cn2,
+	     REAL_T *cg,  REAL_T *x,  REAL_T *f){
+        REAL_T e_PBSA=0;
 	//checking passed options
 	if ( ipb != 1 && ipb !=2 ) {
 		printf("ipb should be either 1 or 2.\n");
 		exit(1);
-	/*
-	} else if ( nfocus != 1 && nfocus != 2) {
-		printf("nfocus should be either 1 or 2.\n");
-		exit(1);
-	*/
 	} else if ( fillratio < 1 ) {
 		printf("fillratio should be at least 1.\n");
 		exit(1);
@@ -145,19 +146,14 @@ REAL_T epbsa(int ipb, REAL_T fillratio, INT_T natom,
         //initialize with default values
 	PBSA_OPTSSTRUCT_T *pbsaopts;
 	pbsaopts=pbsa_init();
-	e_PBSA = 0;
 	//overridding defaults
 	pbsaopts->ipb=ipb;
 	pbsaopts->fillratio=fillratio;
 	// not from human input
-	// int ix(i02) RESIDUE_POINTER
-	// int ix(i04) ATOM_TYPE_INDEX
-	// int ix(i06) INDEX TO N-B TYPE
-        //pb_force_(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),ix(i10),cn1,cn2,xx(l15),x,f,evdw,eelt,epol)
-	//np_force_(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),cn1,cn2,x,f,esurf,edisp)
 	free(pbsaopts);
 	return (e_PBSA);
 }
+	//np_force_(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),cn1,cn2,x,f,esurf,edisp)
 /*
 	int 	savbcopt[0] = 0;
 	int 	savbcopt[1] = 0;
