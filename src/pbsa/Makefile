@@ -76,8 +76,7 @@ egb.o: \
                     copyright.h\
                     md.h\
                     parms.h\
-                    timer.h\
-                    constants.h
+                    timer.h
 ene.o: \
                     copyright.h\
                     md.h\
@@ -95,7 +94,7 @@ pb_write.o: \
 force.o: \
                     copyright.h\
                     egb.o\
-                    constants.h\
+                    pb_constants.h\
                     timer.h\
                     md.h\
                     box.h\
@@ -115,7 +114,7 @@ locmem.o: \
 pb_read.o: \
                     copyright.h\
                     box.h\
-                    constants.h\
+                    pb_constants.h\
                     timer.h\
                     extra.h\
                     files.h\
@@ -130,14 +129,14 @@ timer.o: \
                     timer.h
 sa_driver.o: \
                     copyright.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_def.h
 np_force.o: \
                     copyright.h\
                     pb_def.h\
                     timer.h\
                     pb_md.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_force.o\
 		    sa_driver.o
 pb_force.o: \
@@ -147,7 +146,7 @@ pb_force.o: \
                     md.h\
                     pb_md.h\
                     box.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_dbfrc_fld.h\
                     pb_dbfrc_fld2.h\
 		    sa_driver.o\
@@ -156,29 +155,29 @@ pb_force.o: \
 pb_exmol.o: \
                     copyright.h\
                     pb_def.h\
-                    constants.h
+                    pb_constants.h
 pb_mpfrc.o: \
                     copyright.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_def.h
 pb_direct.o: \
                     copyright.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_def.h
 pb_list.o: \
                     copyright.h\
                     pb_def.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_force.o
 pb_nlsolver.o: \
                     copyright.h\
                     timer.h\
                     timer.o\
-                    constants.h
+                    pb_constants.h
 pb_lsolver.o: \
                     copyright.h\
                     timer.h\
-                    constants.h
+                    pb_constants.h
 pb_init.o: \
                     copyright.h\
                     pb_def.h\
@@ -186,7 +185,7 @@ pb_init.o: \
                     md.h\
                     pb_md.h\
                     parms.h\
-                    constants.h\
+                    pb_constants.h\
                     sa_driver.o\
                     pb_force.o\
                     np_force.o
@@ -198,12 +197,12 @@ runmd.o: \
                     memory.h\
                     extra.h\
                     timer.h\
-                    constants.h\
+                    pb_constants.h\
                     pb_md.h\
                     parms.h
 runmin.o: \
                     copyright.h\
-                    constants.h\
+                    pb_constants.h\
                     md.h\
                     box.h\
                     files.h\
