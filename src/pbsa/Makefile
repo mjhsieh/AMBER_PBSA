@@ -21,7 +21,12 @@ OBJ=dsvdc.o  pbsa.o pb_read.o pb_write.o getcoor.o \
 	pb_exmol.o pb_mpfrc.o pb_direct.o pb_list.o timer.o \
 	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o
 
-WRAPPEROBJ=tortilla.o wonton.o
+WRAPPEROBJ=interface.o inter_inter.o
+UNITTESTOBJ=unittest.o interface.o inter_inter.o myopen.o
+
+unittest: $(UNITTESTOBJ) sfflib syslib netlib c9x-complex
+	$(FC) -o unittest $(UNITTESTOBJ) \
+	$(LIBDIR)/libsff.a ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 mytest: libpbsa.a
 
@@ -43,6 +48,9 @@ libpbsa.a: $(WRAPPEROBJ)
 
 syslib:
 	cd ../lib && $(MAKE) nxtsec.o
+
+sfflib:
+	cd ../sff && $(MAKE) install
 
 netlib: 
 	cd ../blas && $(MAKE) $(BLAS)
