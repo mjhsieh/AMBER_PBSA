@@ -152,10 +152,7 @@ REAL_T epbsa(int ipb, REAL_T fillratio,
 	//overridding defaults
 	pbsaopts->ipb=ipb;
 	pbsaopts->fillratio=fillratio;
-	// not from human input
-        //for (i=0; i<natom; i++) {
-        //   printf("%d\n",iac[i]);
-        //}
+	mjhsieh_(x,f);
 	free(pbsaopts);
 	return (e_PBSA);
 }

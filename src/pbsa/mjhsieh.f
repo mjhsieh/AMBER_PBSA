@@ -43,6 +43,9 @@ end subroutine getx
 subroutine mjhsieh(xx,f)
    use poisson_boltzmann, only : pb_force
    implicit none
+   _REAL_  xx(*),f(*)
+   _REAL_  ene(30)
+   save ene
    return
 end subroutine mjhsieh
 
@@ -50,7 +53,6 @@ end subroutine mjhsieh
 subroutine mjhsieh(xx,ix,x,f,ener,vir)
 
 
-   _REAL_  xx(*)
    integer ix(*)
 
 #  include "pb_constants.h"
@@ -64,7 +66,6 @@ subroutine mjhsieh(xx,ix,x,f,ener,vir)
 
    _REAL_  x(*),f(*),ene(30),vir(*)
    _REAL_  ener(*)
-   save ene
 
    integer i,m
    _REAL_  evdw,eelt,e3bod,epol,esurf
