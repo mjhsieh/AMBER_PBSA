@@ -40,12 +40,16 @@ subroutine getx(natom,filenum,x)
    return
 end subroutine getx
 
+subroutine mjhsieh(xx,f)
+   use poisson_boltzmann, only : pb_force
+   implicit none
+   return
+end subroutine mjhsieh
+
 #ifdef NIL
 subroutine mjhsieh(xx,ix,x,f,ener,vir)
 
-   use poisson_boltzmann, only : pb_force
 
-   implicit none
    _REAL_  xx(*)
    integer ix(*)
 
