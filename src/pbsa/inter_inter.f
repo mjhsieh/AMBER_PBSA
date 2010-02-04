@@ -2,6 +2,22 @@
 #include "copyright.h"
 #  define _REAL_ double precision
 
+subroutine mexit(filenum, exitstatus)
+   implicit none
+   integer filenum
+   integer exitstatus
+
+   if (filenum > 0) then  ! close this unit if greater than zero
+      close(unit=filenum)
+   endif
+   ! exit status; error if non-zero
+#  if XLF90 || IBM3090 || F2C
+   if (exitstatus.ne.0) stop 1; stop 0
+#  else
+   call exit(exitstatus)
+#  endif
+end subroutine mexit
+
 subroutine getx(natom,filenum,x)
    implicit none
    integer natom, filenum
@@ -139,19 +155,3 @@ subroutine mjhsieh(xx,ix,x,f,ener,vir)
 
 end subroutine mjhsieh
 #endif
-
-subroutine mexit(filenum, exitstatus)
-   implicit none
-   integer filenum
-   integer exitstatus
-
-   if (filenum > 0) then  ! close this unit if greater than zero
-      close(unit=filenum)
-   endif
-   ! exit status; error if non-zero
-#if XLF90 || IBM3090 || F2C
-   if (exitstatus.ne.0) stop 1; stop 0
-#else
-   call exit(exitstatus)
-#endif
-end subroutine mexit
