@@ -11,6 +11,7 @@ typedef enum { FALSE, TRUE } boolean;
 
 //extern FILE *nabout;
 void pb_read_(int*,REAL_T*);
+void prepb_init_(REAL_T*,REAL_T*,INT_T*);
 void pb_init_(int*,INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
 	     INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
 	     INT_T*,INT_T*,INT_T*,INT_T*,
