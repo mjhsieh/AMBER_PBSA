@@ -187,7 +187,7 @@ contains
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of PBMD energy and forces
-subroutine pb_force( natom,nres,ntypes,ipres,iac,ico,natex,cn1,cn2,cg,x,f,enb,eel,eelrf )
+subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,enb,eel,eelrf )
     
    use solvent_accessibility, only : dprob, iprob, radi, radip, radip2, radip3, nzratm, &
        narcdot,maxarc,marc,m2narc,fstarc,arcatm,arccrd,savarc, &
@@ -202,7 +202,7 @@ subroutine pb_force( natom,nres,ntypes,ipres,iac,ico,natex,cn1,cn2,cg,x,f,enb,ee
     
    ! Passed variables
     
-   integer natom, nres, ntypes, ipres(*), iac(*), ico(*), natex(*)
+   integer natom, nres, ntypes, npdec, ipres(*), iac(*), ico(*), natex(*)
    _REAL_ cn1(*), cn2(*), cg(natom), x(3,natom), f(3,natom)
    _REAL_ enb, eel, eelrf
  

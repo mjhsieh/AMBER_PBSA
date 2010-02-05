@@ -227,7 +227,8 @@ subroutine pbsa()
    end if
 
    !     --- dynamic memory deallocation:
-   call pb_free
+
+   call pb_free()
    deallocate( ih, stat = ier ); REQUIRE(ier==0)
    deallocate( ipairs, stat = ier ); REQUIRE(ier==0)
    deallocate( ix, stat = ier ); REQUIRE(ier==0)

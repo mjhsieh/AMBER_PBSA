@@ -50,7 +50,7 @@ subroutine prepb_init(mycn1,mycn2,mynttyp)
    return
 end subroutine prepb_init
 
-subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
+subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
                    cn1,cn2,cg,xx,f,epol,evdw,eelt,esurf,edisp)
    use poisson_boltzmann, only : pb_force
    use dispersion_cavity, only : np_force
@@ -59,7 +59,7 @@ subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
 #  include "md.h"
 #  include "timer.h"
 
-   integer natom,   nres,  ntypes
+   integer natom,   nres,  ntypes,npdec
    integer ipres(*),iac(*),ico(*),exclat(*)
    _REAL_  cn1(*),  cn2(*),cg(*), xx(*),    f(*)
    _REAL_  evdw,eelt,epol,esurf,edisp
