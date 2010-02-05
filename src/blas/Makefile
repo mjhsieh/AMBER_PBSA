@@ -7,7 +7,8 @@ VPATH=
 	$(FPP) $< > _$<
 	$(FC) -c $(FOPTFLAGS) -o $@ _$<
 
-OBJS=    dgemm.o drotg.o daxpy.o dswap.o drot.o dnrm2.o ddot.o dscal.o
+OBJS= drotg.o daxpy.o dswap.o drot.o dnrm2.o ddot.o dscal.o dgemm.o xerbla.o \
+      dswap.o
 
 install: $(OBJS)
 	$(AR) blas.a $(OBJS)
