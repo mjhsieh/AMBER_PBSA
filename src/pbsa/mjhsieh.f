@@ -40,9 +40,20 @@ subroutine private_getx(natom,filenum,x)
    return
 end subroutine private_getx
 
+subroutine prepb_init(mycn1,mycn2,mynttyp)
+   implicit none
+#  include "parms.h"
+   _REAL_ mycn1(*),mycn2(*)
+   integer mynttyp
+   cn1(1:mynttyp)=mycn1(1:mynttyp)
+   cn2(1:mynttyp)=mycn2(1:mynttyp)
+   return
+end subroutine prepb_init
+
 subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
-                   cn1,cn2,cg,xx,f,epol)
+                   cn1,cn2,cg,xx,f,epol,evdw,eelt,esurf,edisp)
    use poisson_boltzmann, only : pb_force
+   use dispersion_cavity, only : np_force
    use timer_module
    implicit none
 #  include "md.h"
@@ -51,7 +62,7 @@ subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
    integer natom,   nres,  ntypes
    integer ipres(*),iac(*),ico(*),exclat(*)
    _REAL_  cn1(*),  cn2(*),cg(*), xx(*),    f(*)
-   _REAL_  evdw,eelt,epol
+   _REAL_  evdw,eelt,epol,esurf,edisp
    character(len=8) initial_date, setup_end_date, final_date
    character(len=10) initial_time, setup_end_time, final_time
    ! Initialize the cpu timer. Needed for machines where returned cpu times
@@ -62,6 +73,11 @@ subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
       call pb_force(natom,nres,ntypes,ipres,iac,ico,exclat, &
                     cn1,cn2,cg,xx,f,evdw,eelt,epol)
    end if
+   if ( inp /= 0 ) then
+      esurf = 0.0d0; edisp = 0.0d0
+      call np_force(natom,nres,ntypes,ipres,iac,ico, &
+                    cn1,cn2,xx,f,esurf,edisp)
+   end if
    call timer_stop(TIME_TOTAL)
    call date_and_time( final_date, final_time )
    return
@@ -69,104 +85,3 @@ end subroutine mypb_force
 !ene(2) = evdw
 !ene(3) = eelt
 !ene(4) = epol
-
-#ifdef NIL
-subroutine mjhsieh(xx,ix,x,f,ener,vir)
-
-
-   integer ix(*)
-
-#  include "pb_constants.h"
-#  include "md.h"
-#  include "memory.h"
-#  include "parms.h"
-#  include "pb_md.h"
-
-
-   _REAL_  enmr(3)
-
-   _REAL_  x(*),f(*),ene(30),vir(*)
-   _REAL_  ener(*)
-
-   integer i,m
-   _REAL_  evdw,eelt,e3bod,epol,esurf
-   _REAL_  epolar,aveper,aveind,avetot
-
-
-   ! ZERO OUT THE ENERGIES AND FORCES
-
-   aveper=0.d0
-   aveind=0.d0
-   avetot=0.d0
-   !dipiter=0.d0
-   !dvdl=0.d0
-   !dipole_temp=0.d0
-   do i=1,3
-      enmr(i) = 0.d0
-   end do
-   do i=1,4
-      vir(i) = 0.d0
-   end do
-   !virvsene = 0.d0
-   do i=1,3*natom
-      f(i) = 0.d0
-   end do
-
-   epolar = 0.d0
-   e3bod = 0.d0
-
-   ! part I: bonded terms
-   ! part II: restraining terms
-   ! part III: implicit solvent nonbonded treatments
-
-   esurf = 0.d0
-
-   ! pb options
-
-
-   ! part IV: summary of energy components for printing
-   !
-   !    ene(1):    total energy
-   !    ene(2):    van der Waals
-   !    ene(3):    electrostatic energy
-   !    ene(4):    10-12 (hb) energy, or GB/PB energy when igb.gt.0
-   !    ene(5):    bond energy
-   !    ene(6):    angle energy
-   !    ene(7):    torsion angle energy
-   !    ene(8):    1-4 nonbonds
-   !    ene(9):    1-4 electrostatics
-   !    ene(10):   constraint energy
-   !    ene(11-19):  used a scratch, but not needed further below
-   !    ene(20):   position constraint energy
-   !    ene(21):   charging free energy result
-   !    ene(22):   noe volume penalty
-   !    ene(23):   surface-area dependent solvation energy or cavity energy
-   !    ene(24):   surface-area dependent dispersion energy
-
-   do m = 2,15
-      ene(1) = ene(1) + ene(m)
-   end do
-   ene(1) = ene(1) + epolar + e3bod + ene(23) + ene(24)
-
-   ene(5) = ene(6)+ene(7)
-   ene(6) = ene(8)+ene(9)
-   ene(7) = ene(10)+ene(13)
-   ene(8) = ene(11)+ene(14)
-   ene(9) = ene(12)+ene(15)
-   ene(10) = ene(17)+ene(20)+enmr(1)+enmr(2)+enmr(3)
-   ene(1) = ene(1)+ene(10)
-
-   ! transfer the energy array to external usage for printing
-
-   ener(1:10) = ene(1:10)
-   ener(11) = epolar
-   ener(12) = aveper
-   ener(13) = aveind
-   ener(14) = avetot
-   ener(15) = ene(23)
-   ener(16) = e3bod
-   ener(17) = ene(21)
-   ener(18) = ene(24)
-
-end subroutine mjhsieh
-#endif
