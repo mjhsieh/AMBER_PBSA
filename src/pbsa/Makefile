@@ -21,7 +21,7 @@ OBJ=dsvdc.o  pbsa.o pb_read.o pb_write.o getcoor.o \
 	pb_exmol.o pb_mpfrc.o pb_direct.o pb_list.o timer.o \
 	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o
 
-LIBPBSAOBJ=interface.o mjhsieh.o \
+LIBPBSAOBJ=interface.o pbsaapi.o \
         myopen.o pb_read.LIBPBSA.o pb_force.o sa_driver.o pb_nlsolver.o \
         pb_lsolver.o dsvdc.o timer.o pb_init.o pb_exmol.o np_force.o \
         pb_direct.o pb_list.o pb_write.o pb_mpfrc.o
@@ -247,7 +247,7 @@ pbsa.o: \
                     timer.h\
                     egb.o\
                     timer.o
-mjhsieh.o: \
+pbsaapi.o: \
                     pb_force.o\
 		    np_force.o
 # DO NOT DELETE
