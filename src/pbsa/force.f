@@ -165,7 +165,7 @@ subroutine force(xx,ix,ih,ipairs,x,f,ener,vir,r_stack,i_stack, &
    if( ipb /= 0 ) then
 
       call timer_start(TIME_PBFORCE)
-      call pb_force(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),ix(i10), &
+      call pb_force(natom,nres,ntypes,npdec,ix(i02),ix(i04),ix(i06),ix(i10), &
                     cn1,cn2,xx(l15),x,f,evdw,eelt,epol)
       if ( pbgrid ) pbgrid = .false.
       if ( pbinit ) pbinit = .false.
