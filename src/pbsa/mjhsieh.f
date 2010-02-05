@@ -18,7 +18,7 @@ subroutine mexit(filenum, exitstatus)
 #  endif
 end subroutine mexit
 
-subroutine getx(natom,filenum,x)
+subroutine private_getx(natom,filenum,x)
    implicit none
    integer natom, filenum
    _REAL_ x(*)
@@ -38,16 +38,37 @@ subroutine getx(natom,filenum,x)
    read(filenum,'(6f12.7)') (x(i),i=1,nr3)
    close(filenum, iostat=ier)
    return
-end subroutine getx
+end subroutine private_getx
 
-subroutine mjhsieh(xx,f)
+subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
+                   cn1,cn2,cg,xx,f,epol)
    use poisson_boltzmann, only : pb_force
+   use timer_module
    implicit none
-   _REAL_  xx(*),f(*)
-   _REAL_  ene(30)
-   save ene
+#  include "md.h"
+#  include "timer.h"
+
+   integer natom,   nres,  ntypes
+   integer ipres(*),iac(*),ico(*),exclat(*)
+   _REAL_  cn1(*),  cn2(*),cg(*), xx(*),    f(*)
+   _REAL_  evdw,eelt,epol
+   character(len=8) initial_date, setup_end_date, final_date
+   character(len=10) initial_time, setup_end_time, final_time
+   ! Initialize the cpu timer. Needed for machines where returned cpu times
+   call date_and_time( initial_date, initial_time )
+   call timer_init()
+   call timer_start(TIME_TOTAL)
+   if( ipb /= 0 ) then
+      call pb_force(natom,nres,ntypes,ipres,iac,ico,exclat, &
+                    cn1,cn2,cg,xx,f,evdw,eelt,epol)
+   end if
+   call timer_stop(TIME_TOTAL)
+   call date_and_time( final_date, final_time )
    return
-end subroutine mjhsieh
+end subroutine mypb_force
+!ene(2) = evdw
+!ene(3) = eelt
+!ene(4) = epol
 
 #ifdef NIL
 subroutine mjhsieh(xx,ix,x,f,ener,vir)
@@ -71,7 +92,6 @@ subroutine mjhsieh(xx,ix,x,f,ener,vir)
    _REAL_  evdw,eelt,e3bod,epol,esurf
    _REAL_  epolar,aveper,aveind,avetot
 
-   ene(:) = ZERO
 
    ! ZERO OUT THE ENERGIES AND FORCES
 
@@ -103,16 +123,6 @@ subroutine mjhsieh(xx,ix,x,f,ener,vir)
 
    ! pb options
 
-   if( ipb /= 0 ) then
-
-      call pb_force(natom,nres,ntypes,ix(i02),ix(i04),ix(i06),ix(i10), &
-                    cn1,cn2,xx(l15),x,f,evdw,eelt,epol)
-      if ( pbgrid ) pbgrid = .false.
-      if ( pbinit ) pbinit = .false.
-      ene(2) = evdw
-      ene(3) = eelt
-      ene(4) = epol
-   end if  ! ( igb == 10 )
 
    ! part IV: summary of energy components for printing
    !

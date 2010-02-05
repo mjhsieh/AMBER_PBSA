@@ -327,6 +327,7 @@ subroutine pb_force( natom,nres,ntypes,ipres,iac,ico,natex,cn1,cn2,cg,x,f,enb,ee
    else
       eelrf = eelrffd + eelrfmp
    end if
+print *,"mjhsieh:",enb,eel,eelrf
 
    do iatm = 1, natom
       f(1,iatm) = f(1,iatm) + pbfrc(1,iatm)

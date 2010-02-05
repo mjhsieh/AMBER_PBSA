@@ -509,7 +509,11 @@ end subroutine opt_legal_range
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ PBMD module parsing and initialization
+#ifdef LIBPBSA
+subroutine pb_read(passed_ipb,passed_fillratio)
+#else
 subroutine pb_read
+#endif
    
    ! Module variables
    
@@ -534,6 +538,16 @@ subroutine pb_read
     
    ! begin code
  
+#ifdef LIBPBSA
+   integer passed_ipb
+   _REAL_  passed_fillratio
+
+   imin = 0
+   inp = 2
+   igb = 10
+   ipb = passed_ipb
+   npbstep = 1
+#else
    namelist /pb/ epsin, epsout, smoothopt, istrng, pbtemp,     &
       radiopt, dprob, iprob, npbopt, solvopt, accept, maxitn,  &
       fillratio, space, nbuffer, nfocus, fscale, npbgrid,      &
@@ -544,6 +558,7 @@ subroutine pb_read
       cutsa, ndofd, ndosas, fmiccg, ivalence, laccept, wsor,   &
       lwsor, pbkappa, radinc, expthresh, offx, offy, offz,     &
       sepbuf, mpopt, lmax
+#endif
 
    ! initialize with default values
     
@@ -647,10 +662,14 @@ subroutine pb_read
     
    ! reading parameters
      
+#ifdef LIBPBSA
+   fillratio=passed_fillratio
+#else
    if ( mdin_pb ) then
       rewind 5
       read(5, nml=pb) 
    end if
+#endif
      
    ! check and post processing of options
      
