@@ -50,6 +50,8 @@ subroutine prepb_init(mycn1,mycn2,mynttyp)
    return
 end subroutine prepb_init
 
+! The interface of the FORTRAN side
+! Author: Mengjuei Hsieh
 subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
                    cn1,cn2,cg,xx,f,epol,evdw,eelt,esurf,edisp)
    use poisson_boltzmann, only : pb_force
@@ -82,6 +84,3 @@ subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
    call date_and_time( final_date, final_time )
    return
 end subroutine mypb_force
-!ene(2) = evdw
-!ene(3) = eelt
-!ene(4) = epol
