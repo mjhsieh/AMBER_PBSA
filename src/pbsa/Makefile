@@ -27,7 +27,7 @@ LIBPBSAOBJ=interface.o mjhsieh.o \
         pb_direct.o pb_list.o pb_write.o pb_mpfrc.o
 
 unittest: unittest.o libpbsa.a sfflib syslib netlib c9x-complex
-	$(FC) -o unittest libpbsa.a unittest.o \
+	$(FC) -o unittest unittest.o libpbsa.a \
 	$(LIBDIR)/libsff.a ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 all: pbsa$(SFX)
@@ -248,5 +248,6 @@ pbsa.o: \
                     egb.o\
                     timer.o
 mjhsieh.o: \
-                    pb_force.o
+                    pb_force.o\
+		    np_force.o
 # DO NOT DELETE
