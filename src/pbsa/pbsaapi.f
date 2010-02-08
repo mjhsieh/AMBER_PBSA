@@ -18,16 +18,18 @@ subroutine mexit(filenum, exitstatus)
 #  endif
 end subroutine mexit
 
-subroutine private_getx(natom,filenum,x)
+subroutine private_getx(natom,pathlen,fpath,x)
    implicit none
-   integer natom, filenum
+   integer natom, pathlen, filenum
+   character(len=pathlen) fpath
    _REAL_ x(*)
 
    integer nr3, ier, i
    character(len=80) title1
    character(len=256) testbuffer
+   filenum=9
    nr3=3*natom
-   call myopen(filenum,'unittest.inpcrd','O','F','R')
+   call myopen(filenum,fpath(1:pathlen),'O','F','R')
    read(filenum,'(a80)') title1
    read(filenum,'(a80)') testbuffer
    if( testbuffer(6:6) == ' ' ) then ! this is an old file
@@ -40,19 +42,31 @@ subroutine private_getx(natom,filenum,x)
    return
 end subroutine private_getx
 
-subroutine prepb_init(mycn1,mycn2,mynttyp)
+subroutine prepb_read(passed_ipb,passed_inp,mycn1,mycn2,mynttyp)
    implicit none
 #  include "parms.h"
+#  include "md.h"
+#  include "pb_md.h"
    _REAL_ mycn1(*),mycn2(*)
-   integer mynttyp
+   integer passed_ipb,passed_inp,mynttyp
+
+   if ( passed_ipb /= 1 .and. passed_ipb /=2 ) then
+      print *,"ipb should be either 1 or 2."; call mexit(6,1)
+   endif
    cn1(1:mynttyp)=mycn1(1:mynttyp)
    cn2(1:mynttyp)=mycn2(1:mynttyp)
+   imin = 0
+   igb = 10
+   ipb = passed_ipb
+   inp = passed_inp
+   npbstep = 1
+
    return
-end subroutine prepb_init
+end subroutine prepb_read
 
 ! The interface of the FORTRAN side
 ! Author: Mengjuei Hsieh
-subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
+subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
                    cn1,cn2,cg,xx,f,epol,evdw,eelt,esurf,edisp)
    use poisson_boltzmann, only : pb_force
    use dispersion_cavity, only : np_force
@@ -72,7 +86,7 @@ subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
    call timer_init()
    call timer_start(TIME_TOTAL)
    if( ipb /= 0 ) then
-      call pb_force(natom,nres,ntypes,ipres,iac,ico,exclat, &
+      call pb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat, &
                     cn1,cn2,cg,xx,f,evdw,eelt,epol)
    end if
    if ( inp /= 0 ) then
@@ -84,3 +98,20 @@ subroutine mypb_force(natom,nres,ntypes,npdec,ipres,iac,ico,exclat,&
    call date_and_time( final_date, final_time )
    return
 end subroutine mypb_force
+
+subroutine myoptions
+
+   ! Module variables
+   use poisson_boltzmann
+   use dispersion_cavity
+   use solvent_accessibility
+   implicit none
+   
+   ! Common variables
+#  include "pb_def.h"
+#  include "files.h"
+#  include "pb_md.h"
+#  include "md.h"
+   
+   return
+end subroutine myoptions

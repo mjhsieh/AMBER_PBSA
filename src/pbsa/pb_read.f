@@ -510,7 +510,15 @@ end subroutine opt_legal_range
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ PBMD module parsing and initialization
 #ifdef LIBPBSA
-subroutine pb_read(passed_ipb,passed_fillratio)
+subroutine pb_read(smoothopt_, radiopt_, npbopt_, solvopt_, maxitn_,   &
+   nbuffer_, nfocus_, fscale_, npbgrid_, dbfopt_, bcopt_, scalec_,     &
+   eneopt_, frcopt_, nsnbr_, phiout_, phiform_, npbverb_, npopt_,      &
+   decompopt_, use_rmin_, use_sav_, maxsph_, maxarc_, ndofd_, ndosas_, &
+   mpopt_, lmax_, epsin_, epsout_, istrng_, pbtemp_, dprob_, iprob_,   &
+   accept_, fillratio_, space_, arcres_, cutres_, cutfd_, cutnb_,      &
+   sprob_, vprob_, rhow_effect_, cavity_surften_, cavity_offset_,       &
+   cutsa_, fmiccg_, ivalence_, laccept_, wsor_, lwsor_, radinc_,       &
+   expthresh_, offx_, offy_, offz_, sepbuf_)
 #else
 subroutine pb_read
 #endif
@@ -529,25 +537,28 @@ subroutine pb_read
 #  include "pb_md.h"
 #  include "md.h"
    
-   ! Passed variables
      
    ! Local variables
        
    integer npbverb, l, phiout, scalec
    _REAL_ space
     
+#ifdef LIBPBSA
+   ! Passed variables
+   integer smoothopt_, radiopt_, npbopt_, solvopt_, maxitn_,     &
+           nbuffer_, nfocus_, fscale_, npbgrid_, dbfopt_, bcopt_,&
+           scalec_, eneopt_, frcopt_, nsnbr_, phiout_, phiform_, &
+           npbverb_, npopt_, decompopt_, use_rmin_, use_sav_,    &
+           maxsph_, maxarc_, ndofd_, ndosas_, mpopt_, lmax_
+   _REAL_  epsin_, epsout_, istrng_, pbtemp_, dprob_, iprob_,    &
+           accept_, fillratio_, space_, arcres_, cutres_, cutfd_,&
+           cutnb_, sprob_, vprob_, rhow_effect_, cavity_surften_,&
+           cavity_offset_, cutsa_, fmiccg_, ivalence_, laccept_, &
+           wsor_, lwsor_, radinc_, expthresh_, offx_, offy_,     &
+           offz_, sepbuf_
+#else
    ! begin code
  
-#ifdef LIBPBSA
-   integer passed_ipb
-   _REAL_  passed_fillratio
-
-   imin = 0
-   inp = 2
-   igb = 10
-   ipb = passed_ipb
-   npbstep = 1
-#else
    namelist /pb/ epsin, epsout, smoothopt, istrng, pbtemp,     &
       radiopt, dprob, iprob, npbopt, solvopt, accept, maxitn,  &
       fillratio, space, nbuffer, nfocus, fscale, npbgrid,      &
@@ -663,7 +674,64 @@ subroutine pb_read
    ! reading parameters
      
 #ifdef LIBPBSA
-   fillratio=passed_fillratio
+   smoothopt=smoothopt_
+   radiopt=radiopt_
+   npbopt=npbopt_
+   solvopt=solvopt_
+   maxitn=maxitn_
+   nbuffer=nbuffer_
+   nfocus=nfocus_
+   fscale=fscale_
+   npbgrid=npbgrid_
+   dbfopt=dbfopt_
+   bcopt=bcopt_
+   scalec=scalec_
+   eneopt=eneopt_
+   frcopt=frcopt_
+   nsnbr=nsnbr_
+   phiout=phiout_
+   phiform=phiform_
+   npbverb=npbverb_
+   npopt=npopt_
+   decompopt=decompopt_
+   use_rmin=use_rmin_
+   use_sav=use_sav_
+   maxsph=maxsph_
+   maxarc=maxarc_
+   ndofd=ndofd_
+   ndosas=ndosas_
+   mpopt=mpopt_
+   lmax=lmax_
+   epsin=epsin_
+   epsout=epsout_
+   istrng=istrng_
+   pbtemp=pbtemp_
+   dprob=dprob_
+   iprob=iprob_
+   accept=accept_
+   fillratio=fillratio_
+   space=space_
+   arcres=arcres_
+   cutres=cutres_
+   cutfd=cutfd_
+   cutnb=cutnb_
+   sprob=sprob_
+   vprob=vprob_
+   rhow_effect=rhow_effect_
+   cavity_surften=cavity_surften_
+   cavity_offset=cavity_offset_
+   cutsa=cutsa_
+   fmiccg=fmiccg_
+   ivalence=ivalence_
+   laccept=laccept_
+   wsor=wsor_
+   lwsor=lwsor_
+   radinc=radinc_
+   expthresh=expthresh_
+   offx=offx_
+   offy=offy_
+   offz=offz_
+   sepbuf=sepbuf_
 #else
    if ( mdin_pb ) then
       rewind 5

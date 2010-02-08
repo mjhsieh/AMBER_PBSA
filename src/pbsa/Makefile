@@ -26,26 +26,26 @@ LIBPBSAOBJ=interface.o pbsaapi.o \
         pb_lsolver.o dsvdc.o timer.o pb_init.o pb_exmol.o np_force.o \
         pb_direct.o pb_list.o pb_write.o pb_mpfrc.o
 
-unittest: unittest.o libpbsa.a sfflib syslib netlib c9x-complex
-	$(FC) -o unittest unittest.o libpbsa.a \
-	$(LIBDIR)/libsff.a ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
-
 all: pbsa$(SFX)
+
+install: pbsa$(SFX) simplepbsa$(SFX)
+	/bin/mv pbsa$(SFX) simplepbsa$(SFX) $(BINDIR)
+
+uninstall:
+	-rm -f $(BINDIR)/pbsa$(SFX) $(BINDIR)/simplepbsa$(SFX)
+
+#---------------------------------------------------------------------------
+pbsa$(SFX): $(OBJ) syslib netlib c9x-complex
+	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
+
+simplepbsa$(SFX): simplepbsa.o gopt.o libpbsa.a sfflib syslib netlib c9x-complex
+	$(FC) -o simplepbsa$(SFX) simplepbsa.o gopt.o libpbsa.a \
+	$(LIBDIR)/libsff.a ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 libpbsa.a: $(LIBPBSAOBJ)
 	-rm -f libpbsa.a
 	$(AR) libpbsa.a $(LIBPBSAOBJ)
 	$(RANLIB) libpbsa.a
-
-install: pbsa$(SFX)
-	/bin/mv pbsa$(SFX) $(BINDIR)
-
-uninstall:
-	-rm -f $(BINDIR)/pbsa$(SFX)
-
-#---------------------------------------------------------------------------
-pbsa$(SFX): $(OBJ) syslib netlib c9x-complex
-	$(FC) -o pbsa$(SFX) $(OBJ) ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
 
 syslib:
 	cd ../lib && $(MAKE) nxtsec.o

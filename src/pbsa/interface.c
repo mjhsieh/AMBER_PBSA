@@ -4,38 +4,96 @@
 #include <stdlib.h>
 #include <math.h>
 #include "prm.h"
+#include "interface.h"
 
 // Author: Mengjuei Hsieh, University of California Irvine
 
 typedef enum { FALSE, TRUE } boolean;
-
-//extern FILE *nabout;
-void pb_read_(int*,REAL_T*);
-void prepb_init_(REAL_T*,REAL_T*,INT_T*);
+void prepb_read_(INT_T*,INT_T*,REAL_T*,REAL_T*,INT_T*);
+void pb_read_(int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
+	int*, int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
+	int*, int*, int*, int*, int*, int*, int*, REAL_T*, REAL_T*, REAL_T*,
+	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
+	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
+	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
+	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*);
 void pb_init_(int*,INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
-	     INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
-	     INT_T*,INT_T*,INT_T*,INT_T*,
-	     STRING_T*,STRING_T*,STRING_T*,REAL_T*,
-	     REAL_T*);
+        INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
+	INT_T*,INT_T*,INT_T*,INT_T*,
+	STRING_T*,STRING_T*,STRING_T*,REAL_T*,
+	REAL_T*);
 void mypb_force_(INT_T*,INT_T*,INT_T*,
-		INT_T*,INT_T*,INT_T*,INT_T*,
-		REAL_T*,REAL_T*,REAL_T*,REAL_T*,REAL_T*,REAL_T*,
-		REAL_T*,REAL_T*,REAL_T*,REAL_T*);
+	INT_T*,INT_T*,INT_T*,INT_T*,
+	REAL_T*,REAL_T*,REAL_T*,REAL_T*,REAL_T*,REAL_T*,
+	REAL_T*,REAL_T*,REAL_T*,REAL_T*);
 void pb_free_();
 
-// int ix(i02) RESIDUE_POINTER
-// int ix(i04) ATOM_TYPE_INDEX
-// int ix(i06) INDEX TO N-B TYPE
-// int ix(i10) EXCLUDED ATOM LIST
-// pb_force_(natom,       nres,       ntypes,       ix(i02)
-//           ix(i04),     ix(i06),    ix(i10),      cn1,
-//           cn2,         xx(l15),    x,            f,
-//           evdw,        eelt,       epol                             )
-//REAL_T epbsa(int ipb, REAL_T fillratio,
-//	     INT_T natom, INT_T nres, INT_T ntypes, INT_T *ipres,
-//	     INT_T *iac,  INT_T *ico, INT_T *exclat,REAL_T *cn1,
-//	     REAL_T *cn2, REAL_T *cg, REAL_T *x,    REAL_T *f){
-REAL_T epbsa(int ipb, REAL_T fillratio, PARMSTRUCT_T *prm, REAL_T *x,
+PBOPTSTRUCT_T* pboptinit() {
+       PBOPTSTRUCT_T *myoption;
+       myoption=(PBOPTSTRUCT_T *) malloc(sizeof(PBOPTSTRUCT_T));
+       myoption->inp       = 2;
+       myoption->smoothopt = 0;
+       myoption->radiopt   = 1;
+       myoption->npbopt    = 0;
+       myoption->solvopt   = 1;
+       myoption->maxitn    = 100;
+       myoption->nbuffer   = 0;
+       myoption->nfocus    = 2;
+       myoption->fscale    = 8;
+       myoption->npbgrid   = 1;
+       myoption->dbfopt    = -1;
+       myoption->bcopt     = 5;
+       myoption->scalec    = 0;
+       myoption->eneopt    = -1;
+       myoption->frcopt    = 0;
+       myoption->nsnbr     = 1;
+       myoption->phiout    = 0;
+       myoption->phiform   = 0;
+       myoption->npbverb   = 0;
+       myoption->npopt     = 2;
+       myoption->decompopt = 1;
+       myoption->use_rmin  = 0;
+       myoption->use_sav   = 0;
+       myoption->maxsph    = 400;
+       myoption->maxarc    = 256;
+       myoption->ndofd     = 1;
+       myoption->ndosas    = 1;
+       myoption->mpopt     = 0;
+       myoption->lmax      = 80;
+       myoption->epsin     = 1.0;
+       myoption->epsout    = 80.0;
+       myoption->istrng    = 0.0;
+       myoption->pbtemp    = 300.0;
+       myoption->dprob     = 0.0;
+       myoption->iprob     = 2.0;
+       myoption->accept    = 0.001;
+       myoption->fillratio = 2.0;
+       myoption->space     = 0.5;
+       myoption->arcres    = 0.5;
+       myoption->cutres    = 12.0;
+       myoption->cutfd     = 5.0;
+       myoption->cutnb     = 0.0;
+       myoption->sprob     = 1.6;
+       myoption->vprob     = 1.28;
+       myoption->rhow_effect=1.0;
+       myoption->cavity_surften=0.04356;
+       myoption->cavity_offset=-1.008;
+       myoption->cutsa     = 9.0;
+       myoption->fmiccg    = -0.30;
+       myoption->ivalence  = 1.0;
+       myoption->laccept   = 0.1;
+       myoption->wsor      = 1.9;
+       myoption->lwsor     = 1.95;
+       myoption->radinc    = myoption->sprob*0.5;
+       myoption->expthresh = 0.2;
+       myoption->offx      = 0.0;
+       myoption->offy      = 0.0;
+       myoption->offz      = 0.0;
+       myoption->sepbuf    = 4.0;
+       return myoption;
+}
+
+REAL_T epbsa(int ipb, PBOPTSTRUCT_T *opt, PARMSTRUCT_T *prm, REAL_T *x,
 	     REAL_T *grad, REAL_T *evdw, REAL_T *eelt, REAL_T *esurf,
 	     REAL_T *edisp){
 	int i, ifcap;
@@ -43,20 +101,23 @@ REAL_T epbsa(int ipb, REAL_T fillratio, PARMSTRUCT_T *prm, REAL_T *x,
         REAL_T e_PBSA=0;
 	REAL_T *f;
 	//checking passed options
-	if ( ipb != 1 && ipb !=2 ) {
-		printf("ipb should be either 1 or 2.\n"); exit(1);
-	} else if ( fillratio < 1 ) {
-		printf("fillratio should be at least 1.\n"); exit(1);
-	}
 
-	pb_read_(&ipb,&fillratio);
-//call pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,
-//             ix(i02),ix(i04),ix(i06),ix(i08),ix(i10),
-//             ix(iibh),ix(ijbh),ix(iiba),ix(ijba),
-//             ih(m02),ih(m04),ih(m06),x(l15),
-//             x(l97))
-        //Arrays: Ipres,Iac,Cno,ExclAt,Cn1,Cn2,x,grad
-	prepb_init_(prm->Cn1,prm->Cn2,&prm->Nttyp);
+	prepb_read_(&ipb,&opt->inp,prm->Cn1,prm->Cn2,&prm->Nttyp);
+	pb_read_(&opt->smoothopt, &opt->radiopt, &opt->npbopt, &opt->solvopt,
+		&opt->maxitn, &opt->nbuffer, &opt->nfocus, &opt->fscale,
+		&opt->npbgrid, &opt->dbfopt, &opt->bcopt, &opt->scalec,
+		&opt->eneopt, &opt->frcopt, &opt->nsnbr, &opt->phiout,
+		&opt->phiform, &opt->npbverb, &opt->npopt, &opt->decompopt,
+		&opt->use_rmin, &opt->use_sav, &opt->maxsph, &opt->maxarc,
+		&opt->ndofd, &opt->ndosas, &opt->mpopt, &opt->lmax,
+		&opt->epsin, &opt->epsout, &opt->istrng, &opt->pbtemp,
+		&opt->dprob, &opt->iprob, &opt->accept, &opt->fillratio,
+		&opt->space, &opt->arcres, &opt->cutres, &opt->cutfd,
+		&opt->cutnb, &opt->sprob, &opt->vprob, &opt->rhow_effect,
+		&opt->cavity_surften, &opt->cavity_offset, &opt->cutsa,
+		&opt->fmiccg, &opt->ivalence, &opt->laccept, &opt->wsor,
+		&opt->lwsor, &opt->radinc, &opt->expthresh, &opt->offx,
+		&opt->offy, &opt->offz, &opt->sepbuf);
         pb_init_(&ifcap,&prm->Natom,&prm->Nres,&prm->Ntypes,&prm->Nbonh,&prm->Nbona,
 	     prm->Ipres,prm->Iac,prm->Cno,prm->Iblo,prm->ExclAt,
 	     prm->BondHAt1,prm->BondHAt2,prm->BondAt1,prm->BondAt2,
@@ -74,7 +135,18 @@ REAL_T epbsa(int ipb, REAL_T fillratio, PARMSTRUCT_T *prm, REAL_T *x,
 		grad[i]=grad[i]-f[i];
 	}
 
-	free(f);
-	pb_free_();
+	free(f); pb_free_();
 	return (e_PBSA);
 }
+/* namelist /pb/ epsin, epsout, smoothopt, istrng, pbtemp,     &
+      radiopt, dprob, iprob, npbopt, solvopt, accept, maxitn,  &
+      fillratio, space, nbuffer, nfocus, fscale, npbgrid,      &
+      arcres,dbfopt,bcopt,scalec,eneopt,frcopt,cutres,cutfd,   &
+      cutnb, nsnbr, nsnba,phiout, phiform, npbverb, npopt,     &
+      decompopt, use_rmin, sprob, vprob, rhow_effect, use_sav, &
+      cavity_surften, cavity_offset, maxsph, maxarc,           &
+      cutsa, ndofd, ndosas, fmiccg, ivalence, laccept, wsor,   &
+      lwsor, pbkappa, radinc, expthresh, offx, offy, offz,     &
+      sepbuf, mpopt, lmax
+ */
+
