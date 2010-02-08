@@ -1,3 +1,6 @@
+
+FILE *nabout;
+
 typedef	int	INT_T;
 typedef	char	STRING_T;
 typedef double	REAL_T;
