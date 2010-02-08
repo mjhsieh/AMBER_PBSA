@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_dmp/prmtop -c ../pbsa_dmp/inpcrd \
+    --fillratio=4 > output.pbsa_dmp
+../dacdif output.pbsa_dmp.save output.pbsa_dmp

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_tsr/prmtop -c ../pbsa_tsr/tsrb.rst --space=1.0 --accept=0.001 --sprob=1.6 --radiopt=1 --cutnb=9.0 > output.pbsa_tsr
+../dacdif output.pbsa_tsr.save output.pbsa_tsr

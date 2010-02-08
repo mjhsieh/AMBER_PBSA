@@ -1,0 +1,61 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+echo pbsa_frc/dbf_0/argasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/argasp/prmtop -c ../pbsa_frc/dbf_0/argasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.20120090334788048951 --offy=.07976775414288766136 --offz=.08533738212225714896 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/argasp/force.save force.dat
+echo pbsa_frc/dbf_0/dadt
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/dadt/prmtop -c ../pbsa_frc/dbf_0/dadt/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.23417615283669545579 --offy=.10868404187139500106 --offz=.09561449018829920346 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/dadt/force.save force.dat
+echo pbsa_frc/dbf_0/dgdc
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/dgdc/prmtop -c ../pbsa_frc/dbf_0/dgdc/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.12658314767906735435 --offy=.20427564317758720664 --offz=.03833887752922147282 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/dgdc/force.save force.dat
+echo pbsa_frc/dbf_0/lysasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/lysasp/prmtop -c ../pbsa_frc/dbf_0/lysasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.13446455275124362926 --offy=.12204351939451277199 --offz=.07017731254005554368 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/lysasp/force.save force.dat
+echo pbsa_frc/dbf_0/polyALA
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/polyALA/prmtop -c ../pbsa_frc/dbf_0/polyALA/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.09325693533127842036 --offy=.00605792413098544267 --offz=.16257209997863704336 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/polyALA/force.save force.dat
+echo pbsa_frc/dbf_0/polyAT
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_0/polyAT/prmtop -c ../pbsa_frc/dbf_0/polyAT/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --dbfopt=0 --cutnb=12 --smoothopt=1 --frcopt=1 --nfocus=1 --cutsa=11 --cutres=15 --offx=.24850459303567613757 --offy=.15836817529831843012 --offz=.09795678579058198797 > /dev/null
+../dacdif ../pbsa_frc/dbf_0/polyAT/force.save force.dat
+echo pbsa_frc/dbf_1/argasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/argasp/prmtop -c ../pbsa_frc/dbf_1/argasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.20120090334788048951 --offy=.07976775414288766136 --offz=.08533738212225714896 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/argasp/force.save force.dat
+echo pbsa_frc/dbf_1/dadt
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/dadt/prmtop -c ../pbsa_frc/dbf_1/dadt/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.23417615283669545579 --offy=.10868404187139500106 --offz=.09561449018829920346 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/dadt/force.save force.dat
+echo pbsa_frc/dbf_1/dgdc
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/dgdc/prmtop -c ../pbsa_frc/dbf_1/dgdc/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.12658314767906735435 --offy=.20427564317758720664 --offz=.03833887752922147282 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/dgdc/force.save force.dat
+echo pbsa_frc/dbf_1/lysasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/lysasp/prmtop -c ../pbsa_frc/dbf_1/lysasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.13446455275124362926 --offy=.12204351939451277199 --offz=.07017731254005554368 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/lysasp/force.save force.dat
+echo pbsa_frc/dbf_1/polyALA
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/polyALA/prmtop -c ../pbsa_frc/dbf_1/polyALA/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.09325693533127842036 --offy=.00605792413098544267 --offz=.16257209997863704336 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/polyALA/force.save force.dat
+echo pbsa_frc/dbf_1/polyAT
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_1/polyAT/prmtop -c ../pbsa_frc/dbf_1/polyAT/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --bcopt=6 --dbfopt=1 --cutnb=12 --smoothopt=1 --frcopt=2 --nfocus=1 --cutsa=11 --cutres=15 --offx=.24850459303567613757 --offy=.15836817529831843012 --offz=.09795678579058198797 > /dev/null
+../dacdif ../pbsa_frc/dbf_1/polyAT/force.save force.dat
+echo pbsa_frc/dbf_2/argasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/argasp/prmtop -c ../pbsa_frc/dbf_2/argasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.20120090334788048951 --offy=.07976775414288766136 --offz=.08533738212225714896 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/argasp/force.save force.dat
+echo pbsa_frc/dbf_2/dadt
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/dadt/prmtop -c ../pbsa_frc/dbf_2/dadt/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.23417615283669545579 --offy=.10868404187139500106 --offz=.09561449018829920346 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/dadt/force.save force.dat
+echo pbsa_frc/dbf_2/dgdc
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/dgdc/prmtop -c ../pbsa_frc/dbf_2/dgdc/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.12658314767906735435 --offy=.20427564317758720664 --offz=.03833887752922147282 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/dgdc/force.save force.dat
+echo pbsa_frc/dbf_2/lysasp
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/lysasp/prmtop -c ../pbsa_frc/dbf_2/lysasp/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=2 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.13446455275124362926 --offy=.12204351939451277199 --offz=.07017731254005554368 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/lysasp/force.save force.dat
+echo pbsa_frc/dbf_2/polyALA
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/polyALA/prmtop -c ../pbsa_frc/dbf_2/polyALA/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.09325693533127842036 --offy=.00605792413098544267 --offz=.16257209997863704336 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/polyALA/force.save force.dat
+echo pbsa_frc/dbf_2/polyAT
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_frc/dbf_2/polyAT/prmtop -c ../pbsa_frc/dbf_2/polyAT/inpcrd --inp=0 --radiopt=0 --accept=0.000000001 --sprob=0.6 --fillratio=1.5 --bcopt=6 --eneopt=2 --cutnb=12 --smoothopt=1 --frcopt=3 --nfocus=1 --cutsa=11 --cutres=15 --offx=.24850459303567613757 --offy=.15836817529831843012 --offz=.09795678579058198797 > /dev/null
+../dacdif ../pbsa_frc/dbf_2/polyAT/force.save force.dat

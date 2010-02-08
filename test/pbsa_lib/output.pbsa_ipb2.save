@@ -1,0 +1,7 @@
+ PB Info in pb_read(): igb has been overwritten by ipb
+ PB Info in pb_read(): npopt has been overwritten with inp
+VDWAALS =    -153.6897
+EPB     =       0.0000
+EELEC   =    -989.5100
+ECAVITY =       0.0000
+EDISPER =       0.0000

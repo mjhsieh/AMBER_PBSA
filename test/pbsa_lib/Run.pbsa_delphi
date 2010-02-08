@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_delphi/1az6.top \
+    -c ../pbsa_delphi/1az6.crd --fillratio=2 --smoothopt=2 --nfocus=1 \
+    --istrng=150 --dbfopt=1 --cutnb=8 --maxitn=10000 --dprob=1.5 \
+    --inp=0 > output.pbsa_delphi
+../dacdif output.pbsa_delphi.save output.pbsa_delphi

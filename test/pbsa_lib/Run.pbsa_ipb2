@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+${AMBERHOME}/bin/simplepbsa -p ../pbsa_ipb2/prmtop -c ../pbsa_ipb2/110D.mincrd --ipb=2 --inp=0 --istrng=150 --dprob=1.5 --fillratio=1.5 --smoothopt=1 --dbfopt=0 --cutnb=8 --maxitn=10000 > output.pbsa_ipb2
+../dacdif output.pbsa_ipb2.save output.pbsa_ipb2

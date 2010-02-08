@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+
+for bc in 5 6; do
+   for solv in {1..4}; do
+      if [ $bc -ne 6 -o $solv -ne 2 ] ; then
+         echo "bcoption=$bc solvopt=$solv"
+         ${AMBERHOME}/bin/simplepbsa -p ../pbsa_lpb/prmtop -c ../pbsa_lpb/inpcrd --istrng=0 --accept=0.001 --sprob=1.6 --radiopt=1 --fillratio=4 --bcopt=${bc} --solvopt=${solv} --maxitn=10000 > output.pbsa_lpb.bc${bc}_solv${solv}
+         ../dacdif output.pbsa_lpb.bc${bc}_solv${solv}.save output.pbsa_lpb.bc${bc}_solv${solv}
+      fi
+   done
+done

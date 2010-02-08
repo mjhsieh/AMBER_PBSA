@@ -79,8 +79,8 @@ subroutine mypb_force(natom,nres,ntypes,ipres,iac,ico,exclat,&
    integer ipres(*),iac(*),ico(*),exclat(*)
    _REAL_  cn1(*),  cn2(*),cg(*), xx(*),    f(*)
    _REAL_  evdw,eelt,epol,esurf,edisp
-   character(len=8) initial_date, setup_end_date, final_date
-   character(len=10) initial_time, setup_end_time, final_time
+   character(len=8) initial_date, final_date
+   character(len=10) initial_time, final_time
    ! Initialize the cpu timer. Needed for machines where returned cpu times
    call date_and_time( initial_date, initial_time )
    call timer_init()

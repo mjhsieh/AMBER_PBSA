@@ -11,13 +11,13 @@
 #include "interface.h"
 #include "gopt.h"
 
-//void private_getx_(int*,int*,char*,REAL_T*);
+void private_getx_(int*,int*,const char*,REAL_T*);
 
 int main(int argc, const char **argv){
     int    ipb;
     REAL_T e_pb,evdw,eelt,esurf,edisp;
     const char *prm_fpath, *crd_fpath, *tmpstring;
-    int    i,pathlen;
+    int    pathlen;
     REAL_T *x,*grad;
     PARMSTRUCT_T *prm;
     PBOPTSTRUCT_T *opt;

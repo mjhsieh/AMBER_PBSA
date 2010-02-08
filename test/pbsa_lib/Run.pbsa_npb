@@ -1,0 +1,19 @@
+#!/bin/sh
+if [ "${AMBERHOME}_" == "_" ] ; then
+   echo 'You need to specify $AMBERHOME'
+   exit 1
+fi
+runthis(){
+   ${AMBERHOME}/bin/simplepbsa -p ../pbsa_npb/${1}/bc${2}/prmtop -c ../pbsa_npb/${1}/bc${2}/110D.mincrd --istrng=150 --accept=0.001 --sprob=1.5 --radiopt=1 --fillratio=1.5 --bcopt=${2} --dbfopt=0 --nfocus=2 --fscale=4 --cutnb=${3} --solvopt=${4} --npbopt=1 --maxitn=10000
+}
+solver="pbsa.ncg";   bc="5";cutnb="8";solvopt="3";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >    output.pbsa_npb.ncg.bc5; ../dacdif output.pbsa_npb.ncg.bc5.save output.pbsa_npb.ncg.bc5
+solver="pbsa.ncg";   bc="6";cutnb="0";solvopt="3";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >    output.pbsa_npb.ncg.bc6; ../dacdif output.pbsa_npb.ncg.bc6.save output.pbsa_npb.ncg.bc6
+solver="pbsa.nsor";  bc="5";cutnb="8";solvopt="4";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.nsor.bc5; ../dacdif output.pbsa_npb.nsor.bc5.save output.pbsa_npb.nsor.bc5
+solver="pbsa.nsor";  bc="6";cutnb="0";solvopt="4";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.nsor.bc6; ../dacdif output.pbsa_npb.nsor.bc6.save output.pbsa_npb.nsor.bc6
+solver="pbsa.asor";  bc="5";cutnb="8";solvopt="5";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.asor.bc5; ../dacdif output.pbsa_npb.asor.bc5.save output.pbsa_npb.asor.bc5
+solver="pbsa.asor";  bc="6";cutnb="0";solvopt="5";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.asor.bc6; ../dacdif output.pbsa_npb.asor.bc6.save output.pbsa_npb.asor.bc6
+solver="pbsa.dsor";  bc="5";cutnb="8";solvopt="6";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.dsor.bc5; ../dacdif output.pbsa_npb.dsor.bc5.save output.pbsa_npb.dsor.bc5
+solver="pbsa.dsor";  bc="6";cutnb="0";solvopt="6";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.dsor.bc6; ../dacdif output.pbsa_npb.dsor.bc6.save output.pbsa_npb.dsor.bc6
+solver="pbsa.ntmg";  bc="5";cutnb="8";solvopt="2";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt >   output.pbsa_npb.ntmg.bc5; ../dacdif output.pbsa_npb.ntmg.bc5.save output.pbsa_npb.ntmg.bc5
+solver="pbsa.nticcg";bc="5";cutnb="8";solvopt="1";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt > output.pbsa_npb.nticcg.bc5; ../dacdif output.pbsa_npb.nticcg.bc5.save output.pbsa_npb.nticcg.bc5
+solver="pbsa.nticcg";bc="6";cutnb="0";solvopt="1";echo pbsa_npb/${solver}/bc${bc};runthis $solver $bc $cutnb $solvopt > output.pbsa_npb.nticcg.bc6; ../dacdif output.pbsa_npb.nticcg.bc6.save output.pbsa_npb.nticcg.bc6
