@@ -1,6 +1,6 @@
 ! <compile=optimized>
 #include "copyright.h"
-#include "../include/dprec.fh"
+#define _REAL_ double precision
 #include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -179,11 +179,9 @@ np_force.o: \
 decomp.o: \
                     copyright.h
 rgroup.o: \
-                    copyright.h\
-                    ../include/dprec.fh
+                    copyright.h
 rfree.o: \
-                    copyright.h\
-                    ../include/dprec.fh
+                    copyright.h
 pb_force.o: \
                     copyright.h\
                     pb_def.h\
