@@ -13,10 +13,6 @@
 
 void private_getx_(int*,int*,const char*,REAL_T*);
 
-int main__(int argc, const char **argv){
-    return(main(argc, *argv));
-}
-
 int main(int argc, const char **argv){
     int    ipb;
     REAL_T e_pb,evdw,eelt,esurf,edisp;
