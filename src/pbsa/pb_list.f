@@ -1,11 +1,12 @@
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+ partition of atoms into internal and external portions
-subroutine pb_atmpart( verbose,pbprint,natom,ibgwat,ienwat,inatm,outatm,ipres,outflag,xctr,yctr,zctr,rdiel,sepbuf,x )
+!+ partition of atoms into internal and external portions according to a sphere
+subroutine pb_atmpart( verbose,pbprint,natom,ibgwat,ienwat,ibgion,ienion, &
+                       inatm,outwat,oution,ipres,outflag,xctr,yctr,zctr,rdiel,sepbuf,x,ifcap )
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !
    ! Authors:
@@ -18,8 +19,8 @@ subroutine pb_atmpart( verbose,pbprint,natom,ibgwat,ienwat,inatm,outatm,ipres,ou
    ! Passed variables
 
    logical verbose, pbprint
-   integer natom, ibgwat, ienwat, inatm, outatm, ipres(*)
-   integer outflag(natom)
+   integer natom, ibgwat, ienwat, ibgion, ienion, inatm, outwat, oution, ifcap
+   integer ipres(*), outflag(natom)
    _REAL_ xctr, yctr, zctr, rdiel, sepbuf
    _REAL_ x(3,natom)
 
@@ -34,15 +35,33 @@ subroutine pb_atmpart( verbose,pbprint,natom,ibgwat,ienwat,inatm,outatm,ipres,ou
    ! internal portion always include protein atoms
    ! external portion only include water atoms
  
-   inatm = ipres(ibgwat-1)
-   outatm = 0
+   inatm = ipres(ibgwat)-1
+   outwat = 0
+   oution = 0
 
+   if( ifcap == 2 ) then
+      ! Consider monoatomic ions separately
+      inatm = inatm - (ienion - ibgion + 1)
+      do ires = ibgion, ienion
+         num = ipres(ires)
+         xtmp = x(1,num); ytmp = x(2,num); ztmp = x(3,num)
+         atmr = (xtmp-xctr)**2 + (ytmp-yctr)**2 + (ztmp-zctr)**2
+         if ( atmr > sepr ) then
+            oution = oution + 1
+            outflag(num) = 1
+         end if
+         ! Always count ions as "in" even if they are "out"
+         inatm = inatm + 1
+      end do
+   end if
+
+   ! Consider water molecules
    do ires = ibgwat, ienwat
       num = ipres(ires)
       xtmp = x(1,num); ytmp = x(2,num); ztmp = x(3,num)
       atmr = (xtmp-xctr)**2 + (ytmp-yctr)**2 + (ztmp-zctr)**2
       if ( atmr > sepr ) then
-         outatm = outatm + 3
+         outwat = outwat + 3
          outflag(num) = 1
          outflag(num+1) = 1
          outflag(num+2) = 1
@@ -52,25 +71,116 @@ subroutine pb_atmpart( verbose,pbprint,natom,ibgwat,ienwat,inatm,outatm,ipres,ou
    end do
 
    if ( verbose .and. pbprint ) then
-      write(6,'(a,2i6,a,f6.3)') ' Atoms are partitioned into two regions', inatm, outatm, ' with a buffer of', sepbuf
+      write(6,'(a,2i6,a,f6.3)') ' Atoms are partitioned into two regions', inatm-oution, outwat+oution, ' with a buffer of', sepbuf
    end if
 
 end subroutine pb_atmpart
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ partition of atoms into internal and external portions according to a shell
+subroutine pb_atmpart2( verbose,pbprint,natom,ibgwat,ienwat,ibgion,ienion, &
+                        inatm,outwat,oution,ipres,outflag,distance,x )
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !
+   ! Authors:
+   ! Lijiang Yang, Luo Research Group, UC-Irvine
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   implicit none
+
+   ! Passed variables
+
+   logical verbose, pbprint
+   integer natom, ibgwat, ienwat, ibgion, ienion, inatm, outwat, oution
+   integer ipres(*), outflag(natom)
+   _REAL_ distance
+   _REAL_ x(3,natom)
+
+   ! Local variables
+
+   integer ires, jatm, num, proatm
+   logical isin 
+   _REAL_ dist2, dist2tmp, xtmp, ytmp, ztmp
+ 
+   dist2 = distance**2
+   outflag = 0
+ 
+   ! Internal portion always include protein atoms
+   proatm = (ipres(ibgwat) - 1) - (ienion - ibgion + 1)
+   inatm = proatm
+
+   ! External portion include water atoms and ions
+   outwat = 0
+   oution = 0
+
+   ! Consider monoatomic ions
+   do ires = ibgion, ienion
+      isin = .false.
+      num = ipres(ires)
+      xtmp = x(1,num); ytmp = x(2,num); ztmp = x(3,num)
+
+      do jatm = 1, proatm
+         dist2tmp = (x(1,jatm) - xtmp)**2 + (x(2,jatm) - ytmp)**2 + (x(3,jatm) - ztmp)**2
+         if ( dist2tmp < dist2 ) then
+            isin = .true.
+            exit
+         end if
+      end do ! jatm
+      if(.not. isin) then
+         oution = oution + 1
+         outflag(num) = 1
+      end if
+
+      ! Always count ions as "in" even if they are "out"
+      inatm = inatm + 1
+   end do ! ires
+
+   ! Consider water molecules
+   do ires = ibgwat, ienwat
+      isin = .false.
+      num = ipres(ires)
+      xtmp = x(1,num); ytmp = x(2,num); ztmp = x(3,num)
+
+      do jatm = 1, proatm
+         dist2tmp = (x(1,jatm) - xtmp)**2 + (x(2,jatm) - ytmp)**2 + (x(3,jatm) - ztmp)**2
+         if ( dist2tmp < dist2 ) then
+            isin = .true.
+            exit
+         end if
+      end do ! jatm
+      if(.not. isin) then
+         outwat = outwat + 3
+         outflag(num) = 1
+         outflag(num+1) = 1
+         outflag(num+2) = 1
+      else
+         inatm = inatm + 3
+      end if
+
+   end do ! ires
+
+   if ( verbose .and. pbprint ) then
+      write(6,'(a,2i6,a,f6.3)') ' Atoms are partitioned into two regions', inatm-oution, outwat+oution
+   end if
+
+end subroutine pb_atmpart2
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Residue-based nblist for PBMD
-subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ipres,iac,ico,natex,nshrt,iar1pb,iprlong,cutres,x)
+subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ifcap,inatm, &
+                       ntypes,ipres,iac,ico,natex,nshrt,iar1pb,iprlong,cutres,acrd)
     
    implicit none
-    
+
+#  include "pb_constants.h"
+
    ! Passed variables
    
    logical verbose, pbprint
-   integer maxnbr, natom, nres, ibgwat, ienwat, ntypes, ipres(*), iac(*), ico(*), natex(*), nshrt(0:natom)
+   integer maxnbr, natom, nres, ibgwat, ienwat, ifcap, inatm, ntypes
+   integer ipres(*), iac(*), ico(*), natex(*), nshrt(0:natom)
    integer iar1pb(6,0:natom),iprlong(*)
    _REAL_ cutres
-   _REAL_ x(3,*)
-
-#  include "pb_constants.h"
+   _REAL_ acrd(3,*)
      
    ! Local variables
      
@@ -96,7 +206,11 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
    if (ibgwat /= 0) then      
       lastii = ibgwat - 1   ! no. res of solute/ions
       lastjj1 = ibgwat - 1   ! no. res of solute/ions
-      lastjj2 = ienwat
+      if(ifcap == 2 .or. ifcap == 5) then
+         lastjj2 = ibgwat - 1 + (inatm - ipres(ibgwat) + 1) / 3 
+      else
+         lastjj2 = ienwat
+      end if
    else
       lastii = nres
       lastjj1 = nres
@@ -124,9 +238,9 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
          ! see if the approximated backbone centers of the 2 residues fall
          ! within the long cutoff
            
-         dx = (x(1,ip1)+x(1,ip2))/TWO - (x(1,jp1)+x(1,jp2))/TWO
-         dy = (x(2,ip1)+x(2,ip2))/TWO - (x(2,jp1)+x(2,jp2))/TWO
-         dz = (x(3,ip1)+x(3,ip2))/TWO - (x(3,jp1)+x(3,jp2))/TWO
+         dx = (acrd(1,ip1)+acrd(1,ip2))/TWO - (acrd(1,jp1)+acrd(1,jp2))/TWO
+         dy = (acrd(2,ip1)+acrd(2,ip2))/TWO - (acrd(2,jp1)+acrd(2,jp2))/TWO
+         dz = (acrd(3,ip1)+acrd(3,ip2))/TWO - (acrd(3,jp1)+acrd(3,jp2))/TWO
          d2 = dx*dx + dy*dy + dz*dz
          if ( d2 .gt. cutlng ) cycle
           
@@ -136,9 +250,9 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
          do ijp = 0, ijtotal
             i = ijp/jtotal + ipres(ii)
             j = mod(ijp, jtotal) + ipres(jj)
-            dx = x(1,i) - x(1,j)
-            dy = x(2,i) - x(2,j)
-            dz = x(3,i) - x(3,j)
+            dx = acrd(1,i) - acrd(1,j)
+            dy = acrd(2,i) - acrd(2,j)
+            dz = acrd(3,i) - acrd(3,j)
             d2 = dx*dx + dy*dy + dz*dz
             if ( d2 > cutres ) cycle
             lrp = lrp + 1
@@ -151,25 +265,25 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
       ! loop over solvent residues jj
         
       do jj = ibgwat, lastjj2
-         xi = x(1,ipres(jj))
-         yi = x(2,ipres(jj))
-         zi = x(3,ipres(jj))
+         xi = acrd(1,ipres(jj))
+         yi = acrd(2,ipres(jj))
+         zi = acrd(3,ipres(jj))
           
          ! see if the approximated backbone centers of the 2 residues fall
          ! within the long cutoff
            
-         dx = xi - (x(1,ip1)+x(1,ip2))/TWO
-         dy = yi - (x(2,ip1)+x(2,ip2))/TWO
-         dz = zi - (x(3,ip1)+x(3,ip2))/TWO
+         dx = xi - (acrd(1,ip1)+acrd(1,ip2))/TWO
+         dy = yi - (acrd(2,ip1)+acrd(2,ip2))/TWO
+         dz = zi - (acrd(3,ip1)+acrd(3,ip2))/TWO
          d2 = dx*dx + dy*dy + dz*dz
          if ( d2 > cutlng ) cycle
           
          ! see if the 2 residues fall within the final residue cutoff
           
          do i = ip1, ip2
-            dx = xi - x(1,i)
-            dy = yi - x(2,i)
-            dz = zi - x(3,i)
+            dx = xi - acrd(1,i)
+            dy = yi - acrd(2,i)
+            dz = zi - acrd(3,i)
             d2 = dx*dx + dy*dy + dz*dz
             if ( d2 > cutres ) cycle
             lrp = lrp + 1
@@ -180,7 +294,10 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
       end do  ! jj = ibgwat, lastjj2
       
       if (lrp > MAXNEI) then
-         write(6, *) 'PB bomb in pb_reslist(): MAXNEI too short' 
+         write(6, *) 'PB bomb in pb_reslist(): MAXNEI too short'
+!        write(6, '(a)') 'Error: PB bomb in pb_reslist(): MAXNEI too short'
+!        write(6, '(a)') '  Change MAXNEI in pb_def.h and rebuild.'
+!        write(6, '(a,i6)') '  Choose MAXNEI at least ', lrp
          call mexit(6, 1)
       end if
       
@@ -193,27 +310,35 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
    ! loop over solvent residues ii, use first atom only
    
    if (ibgwat /= 0) then      
-      lastii = nres - 1
+      if(ifcap == 2 .or. ifcap == 5) then
+         lastii = ibgwat - 2 + (inatm - ipres(ibgwat) + 1) / 3 
+      else
+         lastii = nres - 1
+      end if
    else
       lastii = -999
    endif
-   lastjj1 = nres
+   if(ifcap == 2 .or. ifcap == 5) then
+      lastjj1 = ibgwat - 1 + (inatm - ipres(ibgwat) + 1) / 3
+   else
+      lastjj1 = nres
+   end if
    do ii = ibgwat, lastii
       ip1 = ipres(ii)
       ip2 = ipres(ii+1)-1
       i = ipres(ii)
-      xi = x(1,i)
-      yi = x(2,i)
-      zi = x(3,i)
+      xi = acrd(1,i)
+      yi = acrd(2,i)
+      zi = acrd(3,i)
       lrp = 0 
                 
       ! loop over solvent residues jj, use first atom only
                 
       do jj = ii+1, lastjj1
          j = ipres(jj)
-         dx = xi - x(1,j)
-         dy = yi - x(2,j)
-         dz = zi - x(3,j)
+         dx = xi - acrd(1,j)
+         dy = yi - acrd(2,j)
+         dz = zi - acrd(3,j)
          d2 = dx*dx + dy*dy + dz*dz
          if ( d2 <= cutres ) then
             lrp = lrp + 1
@@ -222,7 +347,10 @@ subroutine pb_reslist( verbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ntypes,ip
       end do
        
       if (lrp > MAXNEI) then
-         write(6, *) 'PB bomb in pb_reslist(): MAXNEI too short' 
+         write(6, *) 'PB bomb in pb_reslist(): MAXNEI too short'
+!        write(6, '(a)') 'Error: PB bomb in pb_reslist(): MAXNEI too short'
+!        write(6, '(a)') '  Change MAXNEI in pb_def.h and rebuild.'
+!        write(6, '(a,i6)') '  Choose MAXNEI at least ', lrp
          call mexit(6, 1)
       end if
 
@@ -293,7 +421,11 @@ subroutine packlist( ii,ip1,ip2,lrp,lpair,iprpt,ntypes,irp,ipres,iac,ico,natex,n
             iprlong(iprpt) = iwh(j)
          end do
       else
-         write (6, *) 'PB bomb in pb_reslist(): maxnbr too small'
+         write(6, *) 'PB bomb in pb_reslist(): maxnbr too small'
+!        write(6, '(a)') 'Error: PB bomb in pb_reslist(): maxnbr too small'
+!        write(6, '(a,i9)') '  The number of pairs is ', lpair
+!        write(6, '(a,i9)') '  maxnbr is ', maxnbr
+!        write(6, '(a)') '  One approach would be to decrease cutres.'
          call mexit(6, 1)
       end if
    end do  ! i = ip1, ip2
@@ -304,19 +436,19 @@ end subroutine pb_reslist
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Atom-based nblist for PBMD
 subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,nex,iex,iar1pb,iprlong,iprshrt,&
-                       cutnb,cutsa,cutfd,cn1,cn2,cn1pb,cn2pb,cn3pb,cg,x )
+                       cutnb,cutsa,cutfd,cn1,cn2,cn1pb,cn2pb,cn3pb,cg,acrd)
     
    implicit none
     
+#  include "pb_constants.h"
+
    ! Passed variables
     
    integer maxnba,natom,ntypes,natex(*),nshrt(0:natom),nex(*),iex(32,*),iac(*),ico(*),iar1pb(6,0:natom)
    integer iprlong(*),iprshrt(*)
-   _REAL_ x(3,*), cn1(*), cn2(*), cg(*)
+   _REAL_ acrd(3,*), cn1(*), cn2(*), cg(*)
    _REAL_ cn1pb(*), cn2pb(*), cn3pb(*)
    _REAL_ cutnb, cutsa, cutfd
-
-#  include "pb_constants.h"
     
    ! Local variables
     
@@ -365,9 +497,9 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
        
       ! save nonboneded pairs into tmppb and tmpnb
        
-      xi = x(1, i)
-      yi = x(2, i)
-      zi = x(3, i)
+      xi = acrd(1, i)
+      yi = acrd(2, i)
+      zi = acrd(3, i)
       lpr = iar1pb(5, i)
       npr = lpr + iar1pb(6, i)
       pclose = 0
@@ -375,9 +507,9 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
       nclose = 0
       do jp = 1, lpr
          j = iprlong(jp + lpair)
-         dx = xi - x(1, j)
-         dy = yi - x(2, j)
-         dz = zi - x(3, j)
+         dx = xi - acrd(1, j)
+         dy = yi - acrd(2, j)
+         dz = zi - acrd(3, j)
          d2 = dx**2 + dy**2 + dz**2
          if (d2 <= cutfd) then
             pclose = pclose + 1
@@ -395,9 +527,9 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
       
       do jp = lpr+1, npr
          j = iprlong(jp + lpair)
-         dx = xi - x(1, j)
-         dy = yi - x(2, j)
-         dz = zi - x(3, j)
+         dx = xi - acrd(1, j)
+         dy = yi - acrd(2, j)
+         dz = zi - acrd(3, j)
          d2 = dx**2 + dy**2 + dz**2
          if (d2 <= cutfd) then
             pclose = pclose + 1
@@ -407,8 +539,16 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
       
       ! now pack them into the new atom-based nblist
       
-      if (eclose > MAXNEI .or. pclose > MAXNEI .or. sclose > MAXNEI .or. nclose > MAXNEI) then
+      if (eclose > MAXNEI .or. pclose > MAXNEI .or. sclose > MAXNEI .or. &
+          nclose > MAXNEI) then
          write(6, *) 'PB bomb in pb_atmlist(): MAXNEI too short'
+!        write(6, '(a)') 'Error: PB bomb in pb_atmlist(): MAXNEI too short'
+!        write(6, '(a)') '  Change MAXNEI in pb_def.h and rebuild.'
+!        write(6, '(a)') '  Choose MAXNEI equal to the maximum of these:'
+!        write(6, '(a,i6)') '  eclose = ', eclose
+!        write(6, '(a,i6)') '  pclose = ', pclose
+!        write(6, '(a,i6)') '  sclose = ', sclose
+!        write(6, '(a,i6)') '  nclose = ', nclose
          call mexit(6, 1)
       end if
       if (eclose + pclose + sclose + nclose + cntr > maxnba) then
@@ -466,19 +606,18 @@ subroutine pb_atmlist( verbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,n
 end subroutine pb_atmlist 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Set up FDPB grid for a de novo call
-subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutcap, x )
+subroutine pb_setgrd( verbose, prnt, initial, ifcap, atmlast, xcap, ycap, zcap, cutcap )
     
    use poisson_boltzmann
    use solvent_accessibility, only : radi
 
    implicit none
-    
+
    ! Passed variables
     
    logical verbose, prnt, initial
-   integer ifcap, natom, totsavxmymzm
+   integer ifcap, atmlast, totsavxmymzm
    _REAL_ xcap, ycap, zcap, cutcap
-   _REAL_ x(3, *)
     
    ! Local variables
     
@@ -486,7 +625,7 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
     
    ! get center and dimension information of the current molecule
     
-   call setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutcap, x )
+   call setgrd( verbose, prnt, initial, ifcap, atmlast, xcap, ycap, zcap, cutcap )
     
    ! if allocate working arrays for fdpb
     
@@ -515,14 +654,13 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
       deallocate(iepsavz, stat = alloc_err(20) )
 
       deallocate(     xs, stat = alloc_err(30) )
-
       if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
            alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
            alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
            alloc_err(16)+alloc_err(17)+alloc_err(18)+alloc_err(19)+alloc_err(20)+&
            alloc_err(21)+alloc_err(22)+alloc_err(23)+alloc_err(24)+alloc_err(25)+&
            alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30) /= 0 ) then
-         write(6, *) 'PB bomb in pb_setgrd(): Deallocation aborted', alloc_err(1:30)
+        write(6, *) 'PB bomb in pb_setgrd(): Deallocation aborted', alloc_err(1:30)
          call mexit(6, 1)
       end if
    end if
@@ -575,7 +713,7 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
 
    ! initialize saved phi map
     
-   xs = 0.0d0
+   xs = ZERO
     
    ! save fine grid limits for checking of atom-out-of-grid situation
    
@@ -589,16 +727,17 @@ subroutine pb_setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cu
 contains   
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ set up FDPB grid for a de novo call
-subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutcap, x )
+subroutine setgrd( verbose, prnt, initial, ifcap, atmlast, xcap, ycap, zcap, cutcap )
     
    implicit none
-    
+
+#  include "pb_constants.h"
+
    ! Passed variables
     
    logical verbose, prnt, initial
-   integer ifcap, natom 
+   integer ifcap, atmlast 
    _REAL_ xcap, ycap, zcap, cutcap
-   _REAL_ x(3,*)
     
    ! Local variables
     
@@ -614,16 +753,17 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
       write(6, *) '======== Setting up Grid Parameters ========'
       write(6, *) 'Using bounding box for grid setup'
    end if
-   if ( ifcap == 0 ) then
+   if ( ifcap == 0 .or. ifcap == 5 ) then
       xmin = 9999.0; ymin = 9999.0; zmin = 9999.0
       xmax = -9999.0; ymax = -9999.0; zmax = -9999.0
-      do iatm = 1, natom
-         if ( x(1,iatm)-radi(iatm) .lt. xmin ) xmin = x(1,iatm)-radi(iatm)
-         if ( x(1,iatm)+radi(iatm) .gt. xmax ) xmax = x(1,iatm)+radi(iatm)
-         if ( x(2,iatm)-radi(iatm) .lt. ymin ) ymin = x(2,iatm)-radi(iatm)
-         if ( x(2,iatm)+radi(iatm) .gt. ymax ) ymax = x(2,iatm)+radi(iatm)
-         if ( x(3,iatm)-radi(iatm) .lt. zmin ) zmin = x(3,iatm)-radi(iatm)
-         if ( x(3,iatm)+radi(iatm) .gt. zmax ) zmax = x(3,iatm)+radi(iatm)
+      do iatm = 1, atmlast
+         if ( ifcap == 5 .and. outflag(iatm) == 1 ) cycle
+         if ( acrd(1,iatm)-radi(iatm) .lt. xmin ) xmin = acrd(1,iatm)-radi(iatm)
+         if ( acrd(1,iatm)+radi(iatm) .gt. xmax ) xmax = acrd(1,iatm)+radi(iatm)
+         if ( acrd(2,iatm)-radi(iatm) .lt. ymin ) ymin = acrd(2,iatm)-radi(iatm)
+         if ( acrd(2,iatm)+radi(iatm) .gt. ymax ) ymax = acrd(2,iatm)+radi(iatm)
+         if ( acrd(3,iatm)-radi(iatm) .lt. zmin ) zmin = acrd(3,iatm)-radi(iatm)
+         if ( acrd(3,iatm)+radi(iatm) .gt. zmax ) zmax = acrd(3,iatm)+radi(iatm)
       enddo
       xbox = (xmax + xmin)/TWO; ybox = (ymax + ymin)/TWO; zbox = (zmax + zmin)/TWO
 
@@ -672,14 +812,15 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
    savzm(1) = nint(zlength/savh(1))
    if ( solvopt == 2 ) then
 !     if NT-MG and mg_level=4
-      savxm(1) = 16*ceiling( dble(savxm(1))/16.0 ) - 1
-      savym(1) = 16*ceiling( dble(savym(1))/16.0 ) - 1
-      savzm(1) = 16*ceiling( dble(savzm(1))/16.0 ) - 1   
+      savxm(1) = 16*ceiling( dble(savxm(1))/16.0d0 ) - 1
+      savym(1) = 16*ceiling( dble(savym(1))/16.0d0 ) - 1
+      savzm(1) = 16*ceiling( dble(savzm(1))/16.0d0 ) - 1   
    else
       savxm(1) = 2*nint( dble(savxm(1))*HALF ) + 1
       savym(1) = 2*nint( dble(savym(1))*HALF ) + 1
       savzm(1) = 2*nint( dble(savzm(1))*HALF ) + 1
    end if
+
    savxmym(1) = savxm(1)*savym(1)
    savxmymzm(1) = savxmym(1)*savzm(1)
    if ( verbose .and. prnt ) write(6, '(a,i5,1x,3i5)') &
@@ -717,9 +858,9 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
       savzm(l) = nint( zlength/savh(l) ) + nbuffer
       if ( solvopt == 2 ) then
 !        if NT-MG and mg_level=4
-         savxm(l) = 16*ceiling( dble(savxm(l))/16.0 ) - 1
-         savym(l) = 16*ceiling( dble(savym(l))/16.0 ) - 1
-         savzm(l) = 16*ceiling( dble(savzm(l))/16.0 ) - 1   
+         savxm(l) = 16*ceiling( dble(savxm(l))/16.0d0 ) - 1
+         savym(l) = 16*ceiling( dble(savym(l))/16.0d0 ) - 1
+         savzm(l) = 16*ceiling( dble(savzm(l))/16.0d0 ) - 1   
       else
          savxm(l) = 2*nint( dble(savxm(l))*HALF ) + 1
          savym(l) = 2*nint( dble(savym(l))*HALF ) + 1
@@ -761,7 +902,7 @@ subroutine setgrd( verbose, prnt, initial, ifcap, natom, xcap, ycap, zcap, cutca
     
    ! if requested offseting grid, do it here
     
-   if ( offx + offy + offz /= 0.0d0 ) then
+   if ( offx + offy + offz /= ZERO ) then
       do l = 1, nfocus
          savgox(l) = savgox(l) + offx
          savgoy(l) = savgoy(l) + offy

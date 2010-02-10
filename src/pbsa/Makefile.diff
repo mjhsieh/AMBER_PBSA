@@ -1,7 +1,7 @@
---- /opt/amber11/src/pbsa/Makefile	2010-01-04 17:44:32.000000000 -0800
-+++ Makefile	2010-01-04 16:20:00.000000000 -0800
-@@ -37,10 +37,7 @@
- 	cd ../lib && $(MAKE) nxtsec.o
+--- Makefile	2010-02-09 15:36:06.000000000 -0800
++++ Makefile	2010-02-09 17:24:16.000000000 -0800
+@@ -61,10 +61,7 @@
+ 	cd ../sff && $(MAKE) install
  
  netlib: 
 -	cd ../lapack && $(MAKE) $(LAPACK)

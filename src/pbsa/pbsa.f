@@ -41,6 +41,8 @@ subroutine pbsa()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    use timer_module
+   use decomp, only : allocate_int_decomp, allocate_real_decomp, &
+                      deallocate_int_decomp, deallocate_real_decomp
 
    implicit none
 
@@ -107,6 +109,12 @@ subroutine pbsa()
       allocate( ipairs(lastpr), stat = ier ); REQUIRE(ier==0)
       allocate( ih     (lasth), stat = ier ); REQUIRE(ier==0)
 
+      if( idecomp > 0 ) then
+         call allocate_int_decomp(natom, nres)
+      else
+         call allocate_int_decomp(1, 1)
+      endif
+
       lastrst = 1
       lastist = 1
       r_stack(1) = 0.0d0
@@ -127,6 +135,14 @@ subroutine pbsa()
 !     call rdparm2(x,ix,ih)
       call rdparm2(x,ix,ih,ipairs,8,i_stack)
       call mdread2(x,ix,ih)
+
+!        --- alloc memory for decomp module that needs info from mdre
+!        ad2
+      if( idecomp == 1 .or. idecomp == 2 ) then
+         call allocate_real_decomp(nres)
+      else if( idecomp == 3 .or. idecomp == 4 ) then
+         call allocate_real_decomp(npdec*npdec)
+      end if
 
       ! EVALUATE SOME CONSTANTS FROM MDREAD SETTINGS
 

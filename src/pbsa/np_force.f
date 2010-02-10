@@ -1,6 +1,6 @@
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 #include "timer.h"
 
@@ -14,8 +14,6 @@ module dispersion_cavity
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    implicit none
-
-#  include "pb_constants.h"
 
    logical donpsa
    integer npopt
@@ -32,14 +30,16 @@ contains
 !+ Driver of nonelectrostatic solvation energy and forces
 subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfdis )
 
-   use poisson_boltzmann, only : cutnb, acrd, iprshrt, iar1pb, nex, iex
+   use poisson_boltzmann, only : cutnb, acrd, iprshrt, iar1pb, nex, iex, outflag
    use solvent_accessibility
    use timer_module
 
    ! Common variables
     
-#  include "md.h"
 #  include "pb_md.h"
+#  include "md.h"
+#  include "box.h"
+#  include "pb_constants.h"
 
    ! Passed variables
     
@@ -61,10 +61,10 @@ subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfd
  
    call timer_start(TIME_NPSAS)
    if ( donpsa ) then
-      if ( use_rmin == 0 ) call sa_init(pbverbose,pbprint,natom,sprob,mdsig,radip,radip2)
-      if ( use_rmin == 1 ) call sa_init(pbverbose,pbprint,natom,sprob,rmin,radip,radip2)
-      call sa_driver(pbverbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag,&
-           acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
+      if ( use_rmin == 0 ) call sa_init(pbverbose,pbprint,natom,natom,ifcap,sprob,mdsig,radip,radip2,outflag)
+      if ( use_rmin == 1 ) call sa_init(pbverbose,pbprint,natom,natom,ifcap,sprob,rmin,radip,radip2,outflag)
+      call sa_driver(pbverbose,pbprint,ipb,inp,natom,natom,dosas,ndosas,npbstep,nsaslag,&
+              acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
    end if
    call timer_stop(TIME_NPSAS)
 
@@ -75,8 +75,8 @@ subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfd
 !   allocate(yarea(natom,natom))
 !   allocate(zarea(natom,natom))
 !   call np_cavity(natom,cavity_surften,radip,x,enbrfcav,area,darea,xarea,yarea,zarea) 
-   if ( use_sav == 0 ) enbrfcav = cavity_surften * prtsas + cavity_offset
-   if ( use_sav == 1 ) enbrfcav = cavity_surften * prtsav + cavity_offset
+   if ( use_rmin == 0 ) enbrfcav = cavity_surften * prtsas + cavity_offset
+   if ( use_rmin == 1 ) enbrfcav = cavity_surften * prtsav + cavity_offset
    if ( pbprint ) then
       if ( pbverbose ) write(6, '(1x,a,2f12.4)') 'Nonpolar SAS/SAV', prtsas, prtsav
       write(6, '(1x,a,f12.4)') 'Cavity solvation energy', enbrfcav
@@ -93,7 +93,7 @@ subroutine np_force( natom,nres,ntypes,ipres,iac,ico,cn1,cn2,x,f,enbrfcav,enbrfd
          ic = ico(ntypes*(iac(iatm)-1) + iac(iatm))
          if (cn2(ic) /= ZERO) then
             mdsig_iatm = (cn1(ic)/cn2(ic))**SIXTH/2
-            epsln_iatm = cn2(ic)/(256.0d0*mdsig_iatm**6)   
+            epsln_iatm = cn2(ic)/(256.0d0*mdsig(iatm)**6)   
          else
             mdsig_iatm = ZERO
             epsln_iatm = ZERO
@@ -129,6 +129,8 @@ contains
 !+ dispersion solvation energy and force
 subroutine np_dispersion( )
 
+#  include "pb_constants.h"
+
    ! Passed variables
     
    ! integer natom              ! no of atoms
@@ -157,26 +159,25 @@ subroutine np_dispersion( )
    ! Local variables
 
    integer iatm, jatm, katm
-!  integer iarc, idot, jdot
+   ! integer iarc, idot
    integer jdot
    integer i, j, ii, ip1, ip2
-!  integer firstdot, lastarc
-!  integer narcik
+   ! integer firstdot, lastarc
+   ! integer narcik
    integer nbindex
    integer nblist(natom)
 
    _REAL_ dx, dy, dz, d2
    _REAL_ ris(3), risnorm(3), ris1, ris2, ris4, ris_1
    _REAL_ snorm(3), r_1, dotprot
-!  _REAL_ rls(3), rls2, rls4
+   ! _REAL_ rls(3), rls2, rls4
    _REAL_ adis
    _REAL_ cutoff, cutoff4, cutlng, rcut2    
-!  _REAL_ rarc_1, rarcx, rarcy, rarcz
-!  _REAL_ avegamma, tmpgamma
+   ! _REAL_ rarc_1, rarcx, rarcy, rarcz
+   ! _REAL_ avegamma, tmpgamma
    _REAL_ costheta, cross_sect
    _REAL_ tmpg, tmpf, gcorrec
-!  _REAL_ tmpfx, tmpfy, tmpfz, fxcorrec, fycorrec, fzcorrec
-   _REAL_ tmpfx, tmpfy, tmpfz
+   _REAL_ tmpfx, tmpfy, tmpfz !, fxcorrec, fycorrec, fzcorrec
    _REAL_ delts(natom)
    _REAL_ nbd, nbd2(natom), nbdx(natom), nbdy(natom), nbdz(natom)
 
@@ -193,9 +194,9 @@ subroutine np_dispersion( )
    !   enddo
    !enddo
    !close(55)
-
-   adis = ZERO ! mjhsieh initialization
  
+   adis = ZERO ! mjhsieh initialization
+
    if (cutnb == ZERO) then
       cutoff = 999.9d0
    else
@@ -215,48 +216,48 @@ subroutine np_dispersion( )
    delts = FOURPI*(radip**2)/maxsph
 
    do iatm = 1, natom
-       
+
       if ( radip(iatm) == ZERO ) cycle
-       
+
       !
       ! find iatm's neighbors
       !
-       
+
       nbindex = 0; nbd2(1:natom) = ZERO; nblist(1:natom) = 0
       nbdx(1:natom) = ZERO; nbdy(1:natom) = ZERO; nbdz(1:natom) = ZERO
-       
+
       do ii = 1, nres
-          
+
          ip1 = ipres(ii)
          ip2 = ipres(ii+1)-1
-          
+
          dx  = (x(1,ip1) + x(1,ip2))/TWO - x(1,iatm)
          dy  = (x(2,ip1) + x(2,ip2))/TWO - x(2,iatm)
          dz  = (x(3,ip1) + x(3,ip2))/TWO - x(3,iatm)
          d2  = dx*dx + dy*dy +dz*dz
          if ( d2 > cutlng ) cycle
-          
+
          do j = ip1, ip2
-             
+
             if (radip(j) == ZERO ) cycle
-             
+
             dx  = x(1,j) - x(1,iatm)
             dy  = x(2,j) - x(2,iatm)
             dz  = x(3,j) - x(3,iatm)
             d2 = dx*dx + dy*dy + dz*dz
             rcut2  = (radip(j) + cutoff)*(radip(j) + cutoff)
-             
+
             if ( d2 < rcut2 ) then
                nbindex = nbindex + 1
                nbd2(nbindex) = d2
                nblist(nbindex) = j
                nbdx(nbindex) = dx; nbdy(nbindex) = dy; nbdz(nbindex) = dz 
             endif 
-             
+
          enddo ! do j = ip1, ip2
-          
+
       enddo ! do ii = 1, nres
-       
+
       !
       ! ----- Gamma Part -----
       ! For every pair of atom (iatm) and tessera (on jatm), calculate its
@@ -290,9 +291,9 @@ subroutine np_dispersion( )
                ris1 = sqrt(ris2)
                ris_1 = ONE/ris1
                dotprot = ris(1)*snorm(1)+ris(2)*snorm(2)+ris(3)*snorm(3)
-                
+
                ! dispersion energy
-                
+
                ! 6/12 decomposition
                 
                if ( decompopt == 1 ) then
@@ -326,7 +327,7 @@ subroutine np_dispersion( )
                end if
                 
                tmpg = tmpg + adis*dotprot
-                
+
                ! derivative of dispersion energy
 
                risnorm(1) = ris(1)*ris_1
@@ -343,9 +344,9 @@ subroutine np_dispersion( )
          ! add energy correction. However, if jatm is exposed, do not
          ! add correction.
          ! force correction can be ignored
-          
+
          elseif ( nbd > (cutoff - radip(jatm)) ) then
-             
+
             costheta = ( nbd2(j) + cutnb - radip(jatm)*radip(jatm) )/( TWO*nbd*cutoff )
             cross_sect = TWOPI*cutoff*(ONE - costheta) ! cross-section area
             if ( decompopt == 1 ) then
@@ -354,14 +355,14 @@ subroutine np_dispersion( )
                adis = -b(iatm)/(cutoff*cutoff4) + a(iatm)*cutoff/(cutoff4*cutoff4*cutoff4)
             end if
             gcorrec = gcorrec + adis*cross_sect
-             
+
 !           tmpf  = -FIVE*b(iatm)/(cutoff4*cutnb)
 !           fxcorrec  = fxcorrec - tmpf*(nbdx(j)/nbd)*cross_sect
 !           fycorrec  = fycorrec - tmpf*(nbdy(j)/nbd)*cross_sect
 !           fzcorrec  = fzcorrec - tmpf*(nbdz(j)/nbd)*cross_sect
-          
+
          endif
-          
+                
          enbrfdis = enbrfdis + tmpg*delts(jatm) + gcorrec
          f(1, iatm) = f(1, iatm) + tmpfx*delts(jatm) !+ fxcorrec
          f(2, iatm) = f(2, iatm) + tmpfy*delts(jatm) !+ fycorrec

@@ -9,7 +9,7 @@ typedef struct pbopts {
            nfocus, fscale, npbgrid, dbfopt, bcopt, scalec, eneopt,
            frcopt, nsnbr, phiout, phiform, npbverb, npopt,
            decompopt, use_rmin, use_sav, maxsph, maxarc, ndofd,
-           ndosas, mpopt, lmax, inp;
+           ndosas, mpopt, lmax, inp, pbprint;
 } PBOPTSTRUCT_T;
 
 PBOPTSTRUCT_T* pboptinit();

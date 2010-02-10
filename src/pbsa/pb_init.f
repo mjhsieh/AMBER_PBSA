@@ -96,13 +96,18 @@ subroutine pb_free
    deallocate(iepsavz, stat = alloc_err(20) )
 
    deallocate(     xs, stat = alloc_err(30) )
+   deallocate(outflag, stat = alloc_err(31) )
+   deallocate(outflagorig, stat = alloc_err(32) )
+   deallocate( mapout, stat = alloc_err(33) )
+
 
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
         alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
         alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
         alloc_err(16)+alloc_err(17)+alloc_err(18)+alloc_err(19)+alloc_err(20)+&
         alloc_err(21)+alloc_err(22)+alloc_err(23)+alloc_err(24)+alloc_err(25)+&
-        alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30) /= 0 ) then
+        alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30)+&
+        alloc_err(31)+alloc_err(32)+alloc_err(33) /= 0 ) then
       write(6, *) 'PB Bomb in pb_free(): Deallocation aborted', alloc_err(1:30)
       call mexit(6, 1)
    end if
@@ -111,7 +116,7 @@ subroutine pb_free
 end subroutine pb_free
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ PBMD initialization routine
-subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex,ibh,jbh,iba,jba,lbres,igraph,isymbl,cg,rin)
+subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex,ibh,jbh,iba,jba,ibel,lbres,igraph,isymbl,cg,rin)
      
    ! Module variables
      
@@ -127,10 +132,10 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
 #  include "parms.h"
 #  include "pb_md.h"
      
-   ! Passwd variables
+   ! Passed variables
       
    integer ifcap,natom, nres, ntypes, nbonh, nbona
-   integer ipres(*), iac(*), ico(*), numex(*), natex(*), ibh(*), jbh(*), iba(*), jba(*)
+   integer ipres(*), iac(*), ico(*), numex(*), natex(*), ibh(*), jbh(*), iba(*), jba(*), ibel(*)
    character (len=4) :: lbres(*), igraph(*), isymbl(*)
    _REAL_ cg(natom), rin(natom)
      
@@ -157,7 +162,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
    allocate(    nex(     natom), STAT = alloc_err(7 ) )
    allocate(    iex(32,  natom), STAT = alloc_err(8 ) )
     
-   if ( ifcap == 0 ) then
+   if ( ifcap == 0 .or. (ifcap >= 3 .and. ifcap <= 5) ) then
 
    allocate(   acrd( 3,  natom), stat = alloc_err(9 ) )
    allocate(   gcrd( 3,  natom), stat = alloc_err(10) )
@@ -183,9 +188,10 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
  
    allocate(   acrd( 3,-1:natom), stat = alloc_err(9 ) )
    allocate(   gcrd( 3,-1:natom), stat = alloc_err(10) )
-   allocate(   radi(   -1:-1   ), stat = alloc_err(11) )
-   allocate( radip3(    1: 1   ), stat = alloc_err(12) )
-   allocate( nzratm(    1: 1   ), stat = alloc_err(13) )
+
+   allocate(   radi(   -1:-1   ), stat = alloc_err(12) )
+   allocate( radip3(    1: 1   ), stat = alloc_err(15) )
+   allocate( nzratm(    1: 1   ), stat = alloc_err(16) )
 
    end if
     
@@ -201,19 +207,31 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
    endif
    if ( maxnba > maxmax ) maxnba = maxmax
    if ( maxnbr > maxmax ) maxnbr = maxmax
+
    allocate( iar1pb (6,0:natom), stat = alloc_err(24) )
    allocate( iprshrt(  maxnba ), stat = alloc_err(25) )
    allocate( iprlong(  maxnbr ), stat = alloc_err(26) )
    allocate( cn1pb  (  maxnba ), stat = alloc_err(27) )
    allocate( cn2pb  (  maxnba ), stat = alloc_err(28) )
    allocate( cn3pb  (  maxnba ), stat = alloc_err(29) )
+
+   ! allocate ibelly and outflag
+
+   if ( ifcap == 3 .or. ifcap == 4 ) then
+     allocate( ibelly(natom), stat = alloc_err(30) )
+   end if
+   allocate( outflag(  natom  ), stat = alloc_err(31) )
+   allocate( outflagorig(  natom  ), stat = alloc_err(32) )
+   allocate(  mapout(  natom  ), stat = alloc_err(33) )
+
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3)+alloc_err( 4)+alloc_err( 5)+&
         alloc_err( 6)+alloc_err( 7)+alloc_err( 8)+alloc_err( 9)+alloc_err(10)+&
         alloc_err(11)+alloc_err(12)+alloc_err(13)+alloc_err(14)+alloc_err(15)+&
         alloc_err(16)+alloc_err(17)+alloc_err(18)+alloc_err(19)+alloc_err(20)+&
         alloc_err(21)+alloc_err(22)+alloc_err(23)+alloc_err(24)+alloc_err(25)+&
-        alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30) /= 0 ) then
-      write(6, *) 'PB Bomb in pb_init(): Allocation aborted', alloc_err(1:30)
+        alloc_err(26)+alloc_err(27)+alloc_err(28)+alloc_err(29)+alloc_err(30)+&
+        alloc_err(31)+alloc_err(32)+alloc_err(33) /= 0 ) then
+      write(6, *) 'PB Bomb in pb_init(): Allocation aborted', alloc_err(1:31)
       call mexit(6, 1)
    end if 
    if ( pbverbose ) then
@@ -235,23 +253,29 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
 
    ! atomic and total charge in electron for printing only
        
-   totcrgp = 0.0d0
-   totcrgn = 0.0d0
+   totcrgp = ZERO
+   totcrgn = ZERO
    do iatm = 1, natom
        
-      acrg(iatm) = cg(iatm)/18.2223d0
-      if ( acrg(iatm) > 0.0d0) then
+      acrg(iatm) = cg(iatm)*INV_AMBER_ELECTROSTATIC
+      if ( acrg(iatm) > ZERO) then
          totcrgp = totcrgp + acrg(iatm)
       else
          totcrgn = totcrgn + acrg(iatm)
       end if
        
+      ! get info about belly atoms for GBSP
+
+      if(ifcap == 3 .or. ifcap == 4) then
+        ibelly(iatm) = ibel(iatm)
+      end if
+
    end do
    totcrg = totcrgp + totcrgn
 
    ! for pure implicit solvent, set up radii arrays
 
-   if ( ifcap == 0 ) then
+   if ( ifcap == 0 .or. (ifcap >= 3 .and. ifcap <= 5) ) then
 
       ! set up group charges for cavity radii analysis
 
@@ -285,23 +309,23 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
        
       do iatm = 1, natom
          ic = ico(ntypes*(iac(iatm)-1) + iac(iatm))
-         if (cn2(ic) /= 0.0d0) then
-            mdsig(iatm) = (cn1(ic)/cn2(ic))**(1.0d0/6.0d0)/2 ! this is sigma
-            rmin(iatm) = mdsig(iatm)*(2.0d0**(1.0d0/6.0d0)) ! this is Rmin 
+         if (cn2(ic) /= ZERO) then
+            mdsig(iatm) = (cn1(ic)/cn2(ic))**(SIXTH)/2 ! this is sigma
+            rmin(iatm) = mdsig(iatm)*(2.0d0**(SIXTH)) ! this is Rmin 
          else
-            mdsig(iatm) = 0.0d0
-            rmin(iatm) = 0.0d0
+            mdsig(iatm) = ZERO
+            rmin(iatm) = ZERO
          endif
       end do
 
       ! cavity radii for polar solvation if not passing in from driver
 
       if ( radiopt == 0 ) then
-         rinchk = 0.0d0
+         rinchk = ZERO
          do iatm = 1, natom
             rinchk = rinchk+rin(iatm)
          end do
-         if (rinchk == 0.0d0) then
+         if (rinchk == ZERO) then
             write(6,*) 'PB Bomb in pb_init(): Requested radi to be read in, but found none'
             call mexit(6,1)
          end if
@@ -313,7 +337,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
          call phi_aaradi( natom, isymbl, radi )
       else
          write(6,*) 'PB Bomb in pb_init(): Unknown radi assigment option', radiopt
-         call mexit(6,1)
+          call mexit(6,1)
       end if
       if ( pbverbose ) then
          write(6,*) ' no. of atoms processed in PB initialization:', natom
@@ -342,8 +366,8 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
 
          ! nmax and nexp accumulators
 
-         sumnmax(1:natom) = 0.0d0
-         sumnexp(1:natom) = 0.0d0
+         sumnmax(1:natom) = ZERO
+         sumnexp(1:natom) = ZERO
 
       ! initialization for for vdw surface
 
@@ -351,7 +375,7 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
          if ( pbverbose ) write(6, *) ' VDW Surface: setting up working radii'
          nsatm = 0
          do iatm = 1, natom
-            if (radi(iatm) == 0.0d0) cycle
+            if (radi(iatm) == ZERO) cycle
             nsatm = nsatm + 1
             nzratm(nsatm) = iatm
             radip3(nsatm) = radi(iatm)
@@ -360,9 +384,9 @@ subroutine pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ipres,iac,ico,numex,natex
       end if
 
    else
-      acrd(1:3,-1:0) = 0.0d0; gcrd(1:3,-1:0) = 0.0d0
+      acrd(1:3,-1:0) = ZERO; gcrd(1:3,-1:0) = ZERO
       nsatm = 1
-   end if ! if ( ifcap == 0 ) then
+   end if ! if ( ifcap == 0 .or. (ifcap >= 3 .and. ifcap <= 5) ) then
 
    ! assinging atom-based pointers to exclusion list
 

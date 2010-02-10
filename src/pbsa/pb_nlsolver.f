@@ -702,7 +702,7 @@ end subroutine pb_nmg
 !===========================================================================================================
 subroutine pb_fmg ( epsout, itmax, vaccept, nnorm )
 
-   use timer_module
+!  use timer_module
    
    integer litn, itmax
    _REAL_  vaccept,epsout,nnorm
@@ -1282,7 +1282,7 @@ end subroutine pb_ncg
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine pb_dsor ( phi, xs, wsor, accept, npbopt )
 
-   use timer_module
+!  use timer_module
 
 !  Passed variables
     
@@ -1665,7 +1665,7 @@ end subroutine innt
 !=====================================================================================================================
 subroutine resid(lxs,lam1,lam2,lam3,lad,lad1,lbv,lrv,liv,npbopt,nbnd,iepsav)
 
-   use timer_module
+!  use timer_module
    
    integer nbnd,npbopt
    _REAL_ lxs(1-xmym:xmymzm+xmym), lam1(1-xmym:xmymzm), lam2(1-xmym:xmymzm), lam3(1-xmym:xmymzm)
@@ -1882,7 +1882,7 @@ end subroutine nt_iccg
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine pb_nsor ( phi, xs, wsor, accept, npbopt )
 
-   use timer_module
+!  use timer_module
 
 ! Passed variables
     
@@ -2002,7 +2002,7 @@ end subroutine pb_nsor
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine pb_asor ( phi, xs, wsor, accept, npbopt )
 
-   use timer_module
+!  use timer_module
 
 !  Passed variables
     

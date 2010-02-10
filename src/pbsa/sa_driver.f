@@ -1,6 +1,6 @@
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 
 module solvent_accessibility
@@ -15,19 +15,19 @@ module solvent_accessibility
    integer               :: nsrfdot       ! no of sa surface dots
    integer               :: narcdot       ! no of sa arc dots
    integer               :: narc          ! no of sa arcs
-   _REAL_              :: dprob         ! solvent probe for dielectric surface
-   _REAL_              :: iprob         ! ion probe for stern surface
    _REAL_              :: sprob         ! solvent probe for dispersion surface
    _REAL_              :: vprob         ! solvent probe for cavity volume
+   _REAL_              :: dprob         ! solvent probe for dielectric surface
+   _REAL_              :: iprob         ! ion probe for stern surface
    _REAL_              :: arcres        ! arc dot resolution, with respect to the grid spacing
    _REAL_              :: prtsas        ! total sa surface area for printout
    _REAL_              :: prtsav        ! total volume within sa surface area for printout
 
    integer , allocatable ::  nzratm(:)    ! atomic index of atoms with nonzero radii
    _REAL_, allocatable ::   mdsig(:)    ! atomic radii (np vdw radii)
-   _REAL_, allocatable ::   rmin(:)     ! atomic radii (np vdw radii)
+   _REAL_, allocatable ::    rmin(:)    ! atomic radii (np vdw radii)
    _REAL_, allocatable ::    radi(:)    ! atomic radii (pb cavity radii)
-   _REAL_, allocatable ::   radip(:)    ! atomic radii + sprob
+   _REAL_, allocatable ::   radip(:)    ! atomic radii + dprob/sprob
    _REAL_, allocatable ::  radip2(:)    ! squared radip
    _REAL_, allocatable ::    scrd(:,:)  ! coordinates of maxsph evenly distributed dots on the unit sphere
 
@@ -98,18 +98,19 @@ subroutine sa_free ( dosas,ndosas )
 end subroutine sa_free
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ NP dispersion/cavity radi setup based on nonelectrostatic solvation free energies in TIP3P
-subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
+subroutine sa_init( verbose, pbprint, natom, atmlast, ifcap, prob, r, rp, rp2, outflag )
 
    implicit none
+
+#  include "pb_constants.h"
 
    ! Passed variables
 
    logical verbose, pbprint
-   integer natom
+   integer natom, atmlast, ifcap
+   integer outflag(*)
    !character (len=4) :: isymbl(natom)
    _REAL_ prob, r(natom), rp(natom), rp2(natom)
-
-#  include "pb_constants.h"
 
    ! Local variables
     
@@ -135,25 +136,26 @@ subroutine sa_init( verbose, pbprint, natom, prob, r, rp, rp2 )
    !      call mexit(6, 1)
    !   end if
    !end do
-    
+   
+!  if ( verbose .and. pbprint ) write(6, *) ' SA surface: setting up working radii'
    if ( verbose .and. pbprint ) then 
       write(6,*)
       write(6,*) '======== Setting up Solvent Accessibility Data ========'
       write(6,*) 'Setting up working radii'
    end if
-    
    nsatm = 0
-   do iatm = 1, natom
-      if ( r(iatm) == ZERO ) then
-         rp(iatm) = ZERO
-         rp2(iatm) = ZERO
-      else
+   rp  = ZERO
+   rp2 = ZERO
+   do iatm = 1, atmlast
+      if(ifcap == 5 .and. outflag(iatm) == 1) cycle
+      if ( r(iatm) /= ZERO ) then
          rp(iatm) = r(iatm) + prob
          rp2(iatm) = rp(iatm)**2
          nsatm = nsatm + 1
          nzratm(nsatm) = iatm
       endif
    end do
+!  if ( verbose .and. pbprint ) write(6, *) ' SA surface: found nonzero radii', nsatm
    if ( verbose .and. pbprint ) write(6, *) 'Found nonzero radii', nsatm
 
 end subroutine sa_init
@@ -256,14 +258,14 @@ subroutine pb_aaradi( natom, nbonh, ibh, jbh, radi, acrg, ucrgh, ucrga, resid, i
 
    implicit none
 
+#  include "pb_constants.h"
+
    ! Passed variables
 
    integer natom, nbonh
    integer ibh(*), jbh(*)
    character (len=4) :: resid(*), igraph(*), isymbl(*)
    _REAL_ radi(*), acrg(*), ucrgh(*), ucrga(*), rin(*)
-
-#  include "pb_constants.h"
 
    ! Local variables
     
@@ -554,12 +556,12 @@ subroutine sa_sphere(maxsph, scrd)
 
    implicit none
 
+#  include "pb_constants.h"
+
    ! Passed variables
 
    integer maxsph
    _REAL_ scrd(3, *)
-
-#  include "pb_constants.h"
 
    ! Local variables
 
@@ -595,17 +597,17 @@ subroutine sa_sphere(maxsph, scrd)
 end subroutine sa_sphere
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of solvent accessible surface and arcs
-subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag,acrd,iar1pb,iprshrt,nex,iex )
+subroutine sa_driver( verbose,pbprint,ipb,inp,natom,atmlast,dosas,ndosas,npbstep,nsaslag,acrd,iar1pb,iprshrt,nex,iex )
  
+#  include "pb_constants.h"
+
    ! Passed variables
     
    logical verbose, pbprint
-   integer ipb, inp, natom, dosas, ndosas, npbstep, nsaslag
+   integer ipb, inp, natom, atmlast, dosas, ndosas, npbstep, nsaslag
    integer iar1pb(6,0:natom), iprshrt(*), nex(natom), iex(32,natom)
    _REAL_ acrd(3,1:natom)
     
-#  include "pb_constants.h"
-
    ! Local variables
     
    integer ip, iatm
@@ -618,9 +620,9 @@ subroutine sa_driver( verbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag
 
    if ( dosas .eq. ndosas) then
       dosas = 1
-      call sa_srf( verbose, pbprint, natom )
-      if ( ipb == 1 .or. ipb == 2 ) call sa_arc( verbose, pbprint, natom )
-      if ( inp == 2 ) call sa_vol( verbose, pbprint, natom )
+      call sa_srf( verbose, pbprint, atmlast )
+      if ( ipb == 1 .or. ipb == 2 ) call sa_arc( verbose, pbprint, atmlast )
+      if ( inp == 2 ) call sa_vol( verbose, pbprint, atmlast )
    end if
     
    ! compute time-averaged atomic exposures over the last nsaslag steps
@@ -676,28 +678,26 @@ contains
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Solvent accessible surface calculation
-subroutine sa_srf( verbose,pbprint,natom )
+subroutine sa_srf( verbose,pbprint,atmlast )
     
    implicit none
     
    ! Passed variables
     
    logical verbose, pbprint
-   integer natom
+   integer atmlast
     
-#  include "pb_constants.h"
-
    ! Local variables
     
    integer alloc_err(4)
    integer iatm, jatm, jfirst, jlast, ilast, isph, jsph, jp
    integer nsrf, nsurf
-   integer fstsph(natom), lstsph(natom)
+   integer fstsph(atmlast), lstsph(atmlast)
    _REAL_ sx, sy, sz, xi, yi, zi, dx, dy, dz, dxij, dyij, dzij, d2
    _REAL_, parameter :: small = 0.0001d0
     
-   allocate(knockout(  maxsph*natom), stat = alloc_err(1) )
-   allocate(  sphcrd(3,maxsph*natom), stat = alloc_err(2) )
+   allocate(knockout(  maxsph*atmlast), stat = alloc_err(1) )
+   allocate(  sphcrd(3,maxsph*atmlast), stat = alloc_err(2) )
    if ( alloc_err( 1)+alloc_err( 2) /= 0 ) then
       write(6, *) 'SA Bomb in sa_srf(): Allocation aborted', alloc_err(1:2)
       call mexit(6, 1)
@@ -708,7 +708,7 @@ subroutine sa_srf( verbose,pbprint,natom )
    ! this should be the maximum sas area of this molecule
 
    nsrf = 0
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       if ( radip(iatm) == ZERO ) cycle
       fstsph(iatm) = nsrf + 1
       xi = acrd(1,iatm); yi = acrd(2,iatm); zi = acrd(3,iatm)
@@ -750,12 +750,12 @@ subroutine sa_srf( verbose,pbprint,natom )
       ! remember the last srf point of the atom in global srf list
 
       lstsph(iatm) = nsrf
-   end do  ! iatm = 1, natom
+   end do  ! iatm = 1, atmlast
  
    knockout(1:nsrf) = .false.
 
-   allocate( fstsdot(         natom), stat = alloc_err(1) )
-   allocate( lstsdot(         natom), stat = alloc_err(2) )
+   allocate( fstsdot(         atmlast), stat = alloc_err(1) )
+   allocate( lstsdot(         atmlast), stat = alloc_err(2) )
    allocate(  srfcrd(3,       nsrf ), stat = alloc_err(3) )
    if ( alloc_err( 1)+alloc_err( 2)+alloc_err( 3) /= 0 ) then
       write(6, *) 'SA Bomb in sa_srf(): Allocation aborted', alloc_err(1:3)
@@ -764,7 +764,7 @@ subroutine sa_srf( verbose,pbprint,natom )
 
    ! loop over nblist with cutsa2
 
-   ilast = natom - 1
+   ilast = atmlast - 1
    do iatm = 1, ilast
       if ( radip(iatm) == ZERO ) cycle
       xi = acrd(1,iatm); yi = acrd(2,iatm); zi = acrd(3,iatm)
@@ -811,7 +811,7 @@ subroutine sa_srf( verbose,pbprint,natom )
    lstsdot = 0
    nsatm = 0 ! no. atoms with nonzero radii
    nsrfdot = 0 ! sa dots for the whole molecule
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       fstsdot(iatm) = nsrfdot+1
       if ( radip(iatm) == ZERO ) cycle
       nsatm = nsatm + 1
@@ -847,6 +847,7 @@ subroutine sa_srf( verbose,pbprint,natom )
    end if
    
    if ( verbose .and. pbprint ) then
+!     write(6,'(a,i6)') 'Number of SA srf points exposed', nsrfdot
       write(6,*) 'Number of SA srf points exposed', nsrfdot
    end if
 
@@ -866,26 +867,28 @@ subroutine sa_srf( verbose,pbprint,natom )
    !close(55)
 
 end subroutine sa_srf
+
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Solvent accessible arc calculation
-subroutine sa_arc( verbose,pbprint,natom )
+subroutine sa_arc( verbose,pbprint,atmlast )
     
    implicit none
 
    logical verbose, pbprint
-   integer natom
+   integer atmlast
     
    integer alloc_err(8)
-   integer ksrf, lsrf, msrf!, isph
-   integer fstsph(natom), lstsph(natom), fstsph1(natom), lstsph1(natom)
+   integer ksrf, lsrf, msrf !, isph
+   integer fstsph(atmlast), lstsph(atmlast), fstsph1(atmlast), lstsph1(atmlast)
 
-   allocate( fstadot(            natom), stat = alloc_err(1) )
-   allocate( lstadot(            natom), stat = alloc_err(2) )
-   allocate(  fstarc(            natom), stat = alloc_err(3) ) 
-   allocate(  lstarc(            natom), stat = alloc_err(4) )
-   allocate(    marc(            natom), stat = alloc_err(5) )
+   allocate( fstadot(            atmlast), stat = alloc_err(1) )
+   allocate( lstadot(            atmlast), stat = alloc_err(2) )
+   allocate(  fstarc(            atmlast), stat = alloc_err(3) ) 
+   allocate(  lstarc(            atmlast), stat = alloc_err(4) )
+   allocate(    marc(            atmlast), stat = alloc_err(5) )
    if ( alloc_err(1)+alloc_err(2)+alloc_err(3)+alloc_err(4)+alloc_err(5) /= 0 ) then
-      write(6, *) 'SA Bomb in sa_arc(): Allocation aborted', alloc_err(1:5)
+!     write(6, *) 'SA Bomb in sa_arc: atom Allocates failed', alloc_err(1:5)
+      write(6, *) 'SA Bomb in sa_arc(): Allocates aborted', alloc_err(1:5)
       call mexit(6, 1)
    end if
     
@@ -895,35 +898,37 @@ subroutine sa_arc( verbose,pbprint,natom )
     
    ! get all possible arcs and arc dots
 
-   allocate(  m2narc(  maxarc   ,natom), stat = alloc_err(1) )
-   allocate(  arcatm(2,maxarc   *natom), stat = alloc_err(2) )
-   allocate(  savarc(3,maxarc   *natom), stat = alloc_err(3) )
-   allocate( savactr(3,maxarc   *natom), stat = alloc_err(4) )
+   allocate(  m2narc(  maxarc   ,atmlast), stat = alloc_err(1) )
+   allocate(  arcatm(2,maxarc   *atmlast), stat = alloc_err(2) )
+   allocate(  savarc(3,maxarc   *atmlast), stat = alloc_err(3) )
+   allocate( savactr(3,maxarc   *atmlast), stat = alloc_err(4) )
    if ( alloc_err(1)+alloc_err(2)+alloc_err(3)+alloc_err(4) /= 0 ) then
-      write(6, *) 'SA Bomb in sa_arc(): Allocation aborted', alloc_err(1:4)
+!     write(6, *) 'SA Bomb in sa_arc: arc Allocates failed', alloc_err(1:4)
+      write(6, *) 'SA Bomb in sa_arc(): Allocates aborted', alloc_err(1:4)
       call mexit(6, 1)
    end if
     
-   allocate(knockout(  maxarcdot*natom), stat = alloc_err(1) )
-   allocate(  sphcrd(3,maxarcdot*natom), stat = alloc_err(2) )
-   allocate( sphcrd1(3,maxarcdot*natom), stat = alloc_err(3) )
-   allocate(  spharc(  maxarcdot*natom), stat = alloc_err(4) )
-   allocate( spharc1(  maxarcdot*natom), stat = alloc_err(5) )
+   allocate(knockout(  maxarcdot*atmlast), stat = alloc_err(1) )
+   allocate(  sphcrd(3,maxarcdot*atmlast), stat = alloc_err(2) )
+   allocate( sphcrd1(3,maxarcdot*atmlast), stat = alloc_err(3) )
+   allocate(  spharc(  maxarcdot*atmlast), stat = alloc_err(4) )
+   allocate( spharc1(  maxarcdot*atmlast), stat = alloc_err(5) )
    if ( alloc_err(1)+alloc_err(2)+alloc_err(3)+alloc_err(4)+alloc_err(5) /= 0 ) then
-      write(6, *) 'SA Bomb in sa_arc(): Allocation aborted', alloc_err(1:5)
+!     write(6, *) 'SA Bomb in sa_arc: dot Allocates failed', alloc_err(1:5)
+      write(6, *) 'SA Bomb in sa_arc(): Allocates aborted', alloc_err(1:5)
       call mexit(6, 1)
    end if
     
-   call circle( natom, ksrf, arcres, fstsph, lstsph )
+   call circle( atmlast, ksrf, arcres, fstsph, lstsph )
     
    ! knock out points overlapped by other atoms
    ! step 1: loop over exclusion list
 
-   call exclud( natom, 4, 1, ksrf, lsrf, fstsph, lstsph, fstsph1, lstsph1, spharc1, spharc, sphcrd, sphcrd1 )
+   call exclud( atmlast, 4, 1, ksrf, lsrf, fstsph, lstsph, fstsph1, lstsph1, spharc1, spharc, sphcrd, sphcrd1 )
     
    ! step 2: loop over short nblist with cutsa1 of 5 A
-    
-   call exclud( natom, 1, 2, lsrf, msrf, fstsph1, lstsph1, fstsph, lstsph, spharc, spharc1, sphcrd1, sphcrd )
+
+   call exclud( atmlast, 1, 2, lsrf, msrf, fstsph1, lstsph1, fstsph, lstsph, spharc, spharc1, sphcrd1, sphcrd )
     
    ! step 3: loop over long nblist with cutsa2 9 A
    ! note that narcdot, fstadot, lstadot, dotarc, arccrd are returned and used elsewhere
@@ -935,7 +940,7 @@ subroutine sa_arc( verbose,pbprint,natom )
       call mexit(6, 1)
    end if
 
-   call exclud( natom, 2, 3, msrf, narcdot, fstsph, lstsph, fstadot, lstadot, spharc1, dotarc, sphcrd, arccrd )
+   call exclud( atmlast, 2, 3, msrf, narcdot, fstsph, lstsph, fstadot, lstadot, spharc1, dotarc, sphcrd, arccrd )
 
    deallocate(knockout, stat = alloc_err(1) )
    deallocate(  sphcrd, stat = alloc_err(2) )
@@ -948,8 +953,12 @@ subroutine sa_arc( verbose,pbprint,natom )
    end if
    
    if ( verbose .and. pbprint ) then
+!     write(6,'(a,i6)') 'Number of SA arcs generated', narc
+!     write(6,'(a,i6,a,f8.3)') 'Number of SA arc points exposed', narcdot, &
+!            ' with resolution (A)', arcres
       write(6,*) 'Number of SA arcs generated', narc
-      write(6,*) 'Number of SA arc points exposed', narcdot, ' with resolution (A)', arcres
+      write(6,*) 'Number of SA arc points exposed', narcdot, &
+             ' with resolution (A)', arcres
    end if
 
    ! for InsightII/Sybyl display
@@ -969,19 +978,17 @@ subroutine sa_arc( verbose,pbprint,natom )
    !close(55)
 
 end subroutine sa_arc
+
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Generate maximum solvent-accessible circles
-subroutine circle( natom,msrf,cstep,fstsph,lstsph )
+subroutine circle( atmlast,msrf,cstep,fstsph,lstsph )
     
    implicit none
     
    ! Passed variables
     
-   integer natom, msrf, fstsph(*), lstsph(*)
+   integer atmlast, msrf, fstsph(*), lstsph(*)
    _REAL_ cstep
-
-#  include "pb_constants.h"
-
     
    ! Local variables
     
@@ -995,7 +1002,7 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
    _REAL_, parameter :: small = 0.000001d0
 
    narc = 0; msrf = 0
-   ilast = natom - 1
+   ilast = atmlast - 1
    do iatm = 1, ilast
        
       ri = radip(iatm)
@@ -1090,7 +1097,7 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
       lstarc(iatm) = narc
       lstsph(iatm) = msrf
        
-      if ( narc > maxarc*natom ) then
+      if ( narc > maxarc*atmlast ) then
          write(6,*) 'SA Bomb in circle(): Stored surface arcs over limit', iatm, narc
          call mexit(6,1)
       end if
@@ -1098,28 +1105,26 @@ subroutine circle( natom,msrf,cstep,fstsph,lstsph )
          write(6,*) 'SA Bomb in circle(): Stored surface arcs over limit', iatm, marc(iatm)
          call mexit(6,1)
       end if
-      if ( msrf > maxarcdot*natom ) then
+      if ( msrf > maxarcdot*atmlast ) then
          write(6,*) 'SA Bomb in circle(): Stored surface points over limit', msrf
          call mexit(6,1)
       end if
         
    end do  ! iatm = 1, ilast
-   fstarc(natom) = narc + 1
-   lstarc(natom) = narc + 1
-   fstsph(natom) = lstsph(natom) + 1
+   fstarc(atmlast) = narc + 1
+   lstarc(atmlast) = narc + 1
+   fstsph(atmlast) = lstsph(atmlast) + 1
     
 end subroutine circle
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Knock out dots on the circles that are overlapped by close pairs
-subroutine exclud( natom,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,spharc,spharc1,sphcrd,sphcrd1 )
+subroutine exclud( atmlast,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,spharc,spharc1,sphcrd,sphcrd1 )
     
    implicit none
     
-   integer natom, istart, istop, lsrf, msrf
+   integer atmlast, istart, istop, lsrf, msrf
    integer fstsph(*), lstsph(*), fstsph1(*), lstsph1(*), spharc(*), spharc1(*)
    _REAL_ sphcrd(3,*), sphcrd1(3,*)
-
-#  include "pb_constants.h"
     
    integer jp, iatm, jatm, ilast, jfirst, jlast, isph, jsph
    _REAL_ xi, yi, zi, xj, yj, zj
@@ -1129,7 +1134,7 @@ subroutine exclud( natom,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,sp
     
    knockout(1:lsrf) = .false.
     
-   ilast = natom - 1
+   ilast = atmlast - 1
    do iatm = 1, ilast
        
       ri2 = radip2(iatm) 
@@ -1193,22 +1198,20 @@ subroutine exclud( natom,istart,istop,lsrf,msrf,fstsph,lstsph,fstsph1,lstsph1,sp
       end do
       lstsph1(iatm) = msrf
    end do
-   fstsph1(natom) = lstsph1(natom) + 1
+   fstsph1(atmlast) = lstsph1(atmlast) + 1
     
 end subroutine exclud
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Volume within the solvent accessible surface
-subroutine sa_vol( verbose,pbprint,natom )
+subroutine sa_vol( verbose,pbprint,atmlast )
     
    implicit none
     
    ! Passed variables
     
    logical verbose, pbprint
-   integer natom
+   integer atmlast
     
-#  include "pb_constants.h"
-
    ! Local variables
     
    integer alloc_err
@@ -1217,7 +1220,7 @@ subroutine sa_vol( verbose,pbprint,natom )
     
    _REAL_ xmin, xmax, ymin, ymax, zmin, zmax, xbox, ybox, zbox
    _REAL_ htmp, rh, gox, goy, goz, range1, xi, yi, zi
-   _REAL_ gcrd(3, natom)
+   _REAL_ gcrd(3, atmlast)
     
    ! to silence valgrind errors
    volnum = 0
@@ -1229,7 +1232,7 @@ subroutine sa_vol( verbose,pbprint,natom )
     
    xmin = 9999.0d0; ymin = 9999.0d0; zmin = 9999.0d0
    xmax = -9999.0d0; ymax = -9999.0d0; zmax = -9999.0d0
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       if ( acrd(1,iatm)-radip(iatm) .lt. xmin ) xmin = acrd(1,iatm)-radip(iatm)
       if ( acrd(1,iatm)+radip(iatm) .gt. xmax ) xmax = acrd(1,iatm)+radip(iatm)
       if ( acrd(2,iatm)-radip(iatm) .lt. ymin ) ymin = acrd(2,iatm)-radip(iatm)
@@ -1256,7 +1259,7 @@ subroutine sa_vol( verbose,pbprint,natom )
    goz = - dble(zm+1)*htmp*HALF + zbox
    if ( verbose .and. pbprint ) write(6, '(a,1x,3f10.3)') ' SAV: Grid origin ', gox, goy, goz
     
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       gcrd(1,iatm) = (acrd(1,iatm) - gox)*rh
       gcrd(2,iatm) = (acrd(2,iatm) - goy)*rh
       gcrd(3,iatm) = (acrd(3,iatm) - goz)*rh
@@ -1265,7 +1268,7 @@ subroutine sa_vol( verbose,pbprint,natom )
    allocate( insas(xmymzm), stat = alloc_err )
     
    insas(1:xmymzm) = -1
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       range1 = radip(iatm)
       if ( range1 == ZERO ) cycle
       range1 = (range1-sprob+vprob)*rh; xi = gcrd(1,iatm); yi = gcrd(2,iatm); zi = gcrd(3,iatm)
@@ -1326,8 +1329,6 @@ subroutine exsasph( xm,ym,zm,range1,xi,yi,zi,insph )
    integer  insph(xm,ym,zm)
    _REAL_ range1, xi, yi, zi
  
-#  include "pb_constants.h"
-
    ! Local variables
     
    integer  i, j, k

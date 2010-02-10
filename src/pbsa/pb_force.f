@@ -1,6 +1,6 @@
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 #include "timer.h"
 
@@ -20,35 +20,36 @@ module poisson_boltzmann
 
    ! PBMD FD control variables
 
-   logical :: outphi
-   logical :: srsas
-   logical :: scalerf
+   logical  :: outphi
+   logical  :: srsas
+   logical  :: scalerf
   
-   integer :: phiform 
-   integer :: dbfopt
-   integer :: eneopt
-   integer :: frcopt
-   integer :: solvopt
-   integer :: npbopt
-   integer :: bcopt
-   integer :: smoothopt
-   integer :: xm
-   integer :: ym
-   integer :: zm
-   integer :: xmym
-   integer :: xmymzm
-   integer :: nbuffer
-   integer :: level
-   integer :: nfocus
-   integer :: fscale
-   integer :: maxitn
-   integer :: itn
-   integer :: savbcopt(MAXLEVEL)
-   integer :: savxm(MAXLEVEL)
-   integer :: savym(MAXLEVEL)
-   integer :: savzm(MAXLEVEL)
-   integer :: savxmym(MAXLEVEL)
-   integer :: savxmymzm(MAXLEVEL)
+   integer  :: phiform 
+   integer  :: dbfopt
+   integer  :: eneopt
+   integer  :: npbopt
+   integer  :: solvopt
+   integer  :: frcopt
+   integer  :: bcopt
+   integer  :: smoothopt
+   integer  :: xm
+   integer  :: ym
+   integer  :: zm
+   integer  :: xmym
+   integer  :: xmymzm
+   integer  :: nbuffer
+   integer  :: level
+   integer  :: nfocus
+   integer  :: fscale
+   integer  :: maxitn
+   integer  :: itn
+   integer  :: m, n
+   integer  :: savbcopt(MAXLEVEL)
+   integer  :: savxm(MAXLEVEL)
+   integer  :: savym(MAXLEVEL)
+   integer  :: savzm(MAXLEVEL)
+   integer  :: savxmym(MAXLEVEL)
+   integer  :: savxmymzm(MAXLEVEL)
 
    _REAL_ :: h
    _REAL_ :: gox
@@ -103,11 +104,11 @@ module poisson_boltzmann
  
    ! PBMD topology information
 
-   integer :: lastp
-   integer :: ngrdcrg
+   integer               :: lastp
+   integer               :: ngrdcrg
 
-   integer, allocatable ::   icrd(:,:)
-   integer, allocatable :: grdcrg(:,:)
+   integer , allocatable ::    icrd(:,:)
+   integer , allocatable ::  grdcrg(:,:)
    _REAL_, allocatable :: qgrdcrg(:)
    _REAL_, allocatable ::    gcrd(:,:)
    _REAL_, allocatable ::    acrd(:,:)
@@ -116,33 +117,32 @@ module poisson_boltzmann
  
    ! PBMD nblist information
 
-   integer :: maxnbr
-   integer :: maxnba
-   _REAL_  :: cutres, cutnb, cutfd, cutsa
+   integer               :: maxnbr
+   integer               :: maxnba
+   _REAL_              :: cutres, cutnb, cutfd, cutsa
  
-   integer, allocatable ::   nshrt(:)
-   integer, allocatable ::     nex(:)
-   integer, allocatable ::     iex(:,:)
-   integer, allocatable :: iprlong(:)
-   integer, allocatable :: iprshrt(:)
-   integer, allocatable ::  iar1pb(:,:)
-   _REAL_, allocatable ::    cn1pb(:)
-   _REAL_, allocatable ::    cn2pb(:)
-   _REAL_, allocatable ::    cn3pb(:)
+   integer , allocatable ::   nshrt(:)
+   integer , allocatable ::     nex(:)
+   integer , allocatable ::     iex(:,:)
+   integer , allocatable :: iprlong(:)
+   integer , allocatable :: iprshrt(:)
+   integer , allocatable ::  iar1pb(:,:)
+   _REAL_, allocatable ::   cn1pb(:)
+   _REAL_, allocatable ::   cn2pb(:)
+   _REAL_, allocatable ::   cn3pb(:)
 
    ! PBMD cap water simulation information
 
-   integer :: mpopt
-   integer :: lmax
-   integer :: inatm
-   integer :: outatm
-   integer :: outwat
-   integer :: oution
-   integer, allocatable :: outflag(:)
-   integer, allocatable :: outflagrig(:)
-   integer, allocatable :: mapout(:)
-   integer, allocatable :: ibelly(:)
-   _REAL_  :: sepbuf
+   integer               :: mpopt
+   integer               :: lmax
+   integer               :: inatm
+   integer               :: outwat
+   integer               :: oution
+   integer , allocatable :: outflag(:)
+   integer , allocatable :: outflagorig(:)
+   integer , allocatable :: mapout(:)
+   integer , allocatable :: ibelly(:)
+   _REAL_              :: sepbuf
 
    ! physical variables for energy and force calculations
 
@@ -189,9 +189,9 @@ contains
 !+ Driver of PBMD energy and forces
 subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,enb,eel,eelrf )
     
-   use solvent_accessibility, only : dprob, iprob, radi, radip, radip2, radip3, nzratm, &
-       narcdot,maxarc,marc,m2narc,fstarc,arcatm,arccrd,savarc, &
-       sa_init, sa_driver, sa_free
+   use solvent_accessibility, only : dprob, radi, radip, radip2, radip3, nzratm, &
+                                     sa_init, sa_driver, sa_free
+   use decomp, only : irespw, jgroup
    use timer_module
 
    ! Common variables
@@ -209,22 +209,19 @@ subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,
    ! Local variables
 
    integer iatm, proatm, atmfirst, atmlast
-   integer atmind(natom), outflag(natom)
+   integer atmind(natom)
    _REAL_ acg(natom)
    _REAL_ pbcutcap, pbxcap, pbycap, pbzcap
    _REAL_ eelrffd, eelrfmp
    _REAL_ pbfrc(3,natom)
    _REAL_ ionene
-!  _REAL_ charge_ratio
  
-!  open(866,file='coulomb_force.dat')
-
    enb = ZERO; eel = ZERO; eelrf = ZERO
    eelrffd = ZERO; eelrfmp = ZERO
    pbfrc = ZERO; ionene = ZERO
    atmind = 0
 
-   if ( ifcap /= 0) then
+   if ( ifcap /= 0 ) then
       pbcutcap = cutcap+TWO; pbxcap = xcap; pbycap = ycap; pbzcap = zcap 
       radi(-1) = pbcutcap; acrd(1,-1) = pbxcap; acrd(2,-1) = pbycap; acrd(3,-1) = pbzcap
       radip3(1) = radi(-1); nzratm(1) = -1
@@ -233,27 +230,48 @@ subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,
    ! split atoms into internal/external and update nblist
  
    call timer_start(TIME_PBLIST)
-   if ( ntnbr == 1 .and. mpopt == 1 ) then
-      call pb_atmpart(pbverbose,pbprint,natom,ibgwat,ienwat,inatm,outatm,ipres,outflag,&
-              pbxcap,pbycap,pbzcap,pbcutcap,sepbuf,x)
+   if ( ntnbr == 1 ) then
+      if( mpopt == 1 ) then
+         call pb_atmpart(pbverbose,pbprint,natom,ibgwat,ienwat,ibgion,ienion, &
+                         inatm,outwat,oution,ipres,outflag, &
+                         pbxcap,pbycap,pbzcap,pbcutcap,sepbuf,x,ifcap)
+      else if ( ifcap == 2 ) then 
+         call pb_atmpart(pbverbose,pbprint,natom,ibgwat,ienwat,ibgion,ienion, &
+                         inatm,outwat,oution,ipres,outflag, &
+                         pbxcap,pbycap,pbzcap,cutcap,0.0d0,x,ifcap) ! Use cutcap here, not pbcutcap because
+                                                                    !    the latter is augmented by TWO
+      else if ( ifcap == 5 ) then 
+         call pb_atmpart2(pbverbose,pbprint,natom,ibgwat,ienwat,ibgion,ienion, &
+                          inatm,outwat,oution,ipres,outflag, &
+                          cutcap,x)                           ! Use cutcap here, not pbcutcap because
+                                                                    !    the latter is augmented by TWO
+      end if
    end if
-   if ( ntnbr == 1 .and. cutres > ZERO ) then
-      call pb_reslist(pbverbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,&
-              ntypes,ipres,iac,ico,natex,nshrt,iar1pb,iprlong,cutres,x)
+
+   call pb_atmconv(mpopt,ifcap,natom,ibgwat,ienwat,ibgion,ienion,atmind,ipres,x,cg,acg)
+
+   if( ntnbr == 1 .and. cutres > ZERO ) then
+      call pb_reslist(pbverbose,pbprint,maxnbr,natom,nres,ibgwat,ienwat,ifcap,inatm,&
+                      ntypes,ipres,iac,ico,natex,nshrt,iar1pb,iprlong,cutres,acrd(1,1))
    end if
    if ( ntnba == 1 .and. max(cutnb,cutsa,cutfd) > ZERO ) then
       call pb_atmlist(pbverbose,pbprint,maxnba,natom,ntypes,iac,ico,natex,nshrt,nex,iex,&
-              iar1pb,iprlong,iprshrt,cutnb,cutsa,cutfd,cn1,cn2,cn1pb,cn2pb,cn3pb,cg,x)
+                      iar1pb,iprlong,iprshrt,cutnb,cutsa,cutfd,cn1,cn2,cn1pb,cn2pb,cn3pb,cg,acrd(1,1))
    end if
-   call pb_atmconv(mpopt,natom,ibgwat,ienwat,outflag,atmind,ipres,x,cg,acg)
+
    if ( ntnbr == 1 ) ntnbr = 0
    if ( ntnba == 1 ) ntnba = 0
    call timer_stop(TIME_PBLIST)
  
    call timer_start(TIME_PBSETUP)
    if ( mpopt /=2 .and. pbgrid ) then
-      call pb_setgrd(pbverbose,pbprint,pbinit,ifcap,natom,&
-              pbxcap,pbycap,pbzcap,pbcutcap,acrd(1,1))
+      if(ifcap == 2 .or. ifcap == 5) then
+         call pb_setgrd(pbverbose,pbprint,pbinit,ifcap,inatm,&
+                        pbxcap,pbycap,pbzcap,pbcutcap)
+      else
+         call pb_setgrd(pbverbose,pbprint,pbinit,ifcap,natom,&
+                        pbxcap,pbycap,pbzcap,pbcutcap)
+      end if
    end if
    call timer_stop(TIME_PBSETUP)
 
@@ -261,25 +279,39 @@ subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,
    ! when ifcap /= 0, no need to comptue sas
 
    call timer_start(TIME_PBSETUP)
-   if ( srsas .and. ifcap == 0 ) then
-      call sa_init(pbverbose,pbprint,natom,dprob,radi,radip,radip2)
-      call sa_driver(pbverbose,pbprint,ipb,inp,natom,dosas,ndosas,npbstep,nsaslag,&
-              acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
+   if ( srsas .and. ( ifcap == 0 .or. ifcap == 5 ) ) then
+      if( ifcap == 5 ) then
+         call sa_init(pbverbose,pbprint,natom,inatm,ifcap,dprob,radi,radip,radip2,outflag)
+         call sa_driver(pbverbose,pbprint,ipb,inp,natom,inatm,dosas,ndosas,npbstep,nsaslag,&
+                        acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
+      else
+         call sa_init(pbverbose,pbprint,natom,natom,ifcap,dprob,radi,radip,radip2,outflag)
+         call sa_driver(pbverbose,pbprint,ipb,inp,natom,natom,dosas,ndosas,npbstep,nsaslag,&
+                        acrd(1,1),iar1pb(1,0),iprshrt,nex,iex)
+      end if
    end if
    call timer_stop(TIME_PBSETUP)
 
    ! add FD reaction field energy/force
 
    call timer_start(TIME_PBFDFRC)
-   if ( mpopt /= 2 .and. epsout /= epsin ) then
-      call pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,natom,pbfrc,eelrffd,ionene,npbstep,npbgrid,nstlim)
+   if ( epsout /= epsin .and. mpopt /= 2 ) then
+      ! In the case of ifcap == 2,5, only map crg within cap to grid (atmlast == inatm),
+      ! else map all crg (atmlast == natom)
+      if( ifcap == 2 .or. ifcap == 5 ) then
+         call pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,imin,natom,inatm,npdec,idecomp,irespw, &
+                       ipres,jgroup,ibgwat,ibgion,pbfrc,eelrffd,ionene,npbstep,npbgrid,nstlim)
+      else
+         call pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,imin,natom,natom,npdec,idecomp,irespw, &
+                       ipres,jgroup,ibgwat,ibgion,pbfrc,eelrffd,ionene,npbstep,npbgrid,nstlim)
+      end if
    end if
    call timer_stop(TIME_PBFDFRC)
 
    ! clean up for sas calculations
 
    call timer_start(TIME_PBSETUP)
-   if ( srsas .and. ifcap == 0 ) then
+   if ( srsas .and. (ifcap == 0 .or. ifcap == 5) ) then
       call sa_free( dosas,ndosas )
    end if
    call timer_stop(TIME_PBSETUP)
@@ -303,42 +335,46 @@ subroutine pb_force( natom,nres,ntypes,npdec,ipres,iac,ico,natex,cn1,cn2,cg,x,f,
    ! add direct coulombic and nonbonded forces
     
    call timer_start(TIME_PBDIRECT)
-   if ( ibgwat /= 0 ) then
-      proatm = ipres(ibgwat) - 1
-   else
-      proatm = natom
-   end if
-
-   pbfrc = ZERO ! resetting to zero for printing only
    if ( cutnb == ZERO ) then
-      call pb_directnocut(natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1,cn2,acg,&
-              acrd(1,1),pbfrc,eel,enb)
+      call pb_directnocut(natom,proatm,inatm,ipres,ibgwat,ienwat,ibgion,ienion,ntypes,eneopt,idecomp,ifcap, &
+                          iac,ico,nex,iex,cn1,cn2,acg,acrd(1,1),pbfrc,eel,enb)
    else
-      call pb_directwtcut(natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,acrd(1,1),pbfrc,eel,enb)
+      if( ifcap == 2 .or. ifcap == 5) then
+         call pb_directwtcut(natom,inatm,ifcap,idecomp,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,acrd(1,1), &
+                             pbfrc,eel,enb)
+      else
+         call pb_directwtcut(natom,natom,ifcap,idecomp,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,acrd(1,1), &
+                             pbfrc,eel,enb)
+      end if 
    end if
    call timer_stop(TIME_PBDIRECT)
 
    ! returning:
    ! adding the nonbonded forces to the MD forces
 
-   if ( eneopt == 1 .and. savbcopt(1) /=6 ) then 
+   if ( eneopt == 1 .and. savbcopt(1) /= 6 ) then 
       eel = eel + eelrffd + eelrfmp
       eelrf = ZERO
    else
       eelrf = eelrffd + eelrfmp
    end if
 
-   do iatm = 1, natom
-      f(1,iatm) = f(1,iatm) + pbfrc(1,iatm)
-      f(2,iatm) = f(2,iatm) + pbfrc(2,iatm)
-      f(3,iatm) = f(3,iatm) + pbfrc(3,iatm)
-   end do
+   if( ifcap == 2 .or. ifcap == 5 ) then
+     atmlast = inatm
+   else
+     atmlast = natom
+   endif
 
+   do iatm = 1, natom
+      f(1,iatm) = f(1,iatm) + pbfrc(1,mapout(iatm))
+      f(2,iatm) = f(2,iatm) + pbfrc(2,mapout(iatm))
+      f(3,iatm) = f(3,iatm) + pbfrc(3,mapout(iatm))
+   end do
 
 contains
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ convert passed coordinates and charges to the internal format
-subroutine pb_atmconv( mpopt,natom,ibgwat,ienwat,outflag,atmind,ipres,x,cg,acg )
+subroutine pb_atmconv( mpopt,ifcap,natom,ibgwat,ienwat,ibgion,ienion,atmind,ipres,x,cg,acg )
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !
    ! Authors:
@@ -348,38 +384,54 @@ subroutine pb_atmconv( mpopt,natom,ibgwat,ienwat,outflag,atmind,ipres,x,cg,acg )
     
    ! Passed variables
    
-   integer mpopt, natom, ibgwat, ienwat
-   integer outflag(natom), atmind(natom), ipres(*) 
+   integer mpopt, ifcap, natom, ibgwat, ienwat, ibgion, ienion
+   integer atmind(natom), ipres(*) 
    _REAL_ x(3,natom), cg(natom), acg(natom)
     
    ! Local variables
     
    integer i, j, ifirst, ilast, iatm, ires, num
     
-   if ( mpopt == 1 ) then
+   if ( mpopt == 1 .or. ifcap == 2 .or. ifcap == 5 ) then
        
-      ! copy reordered coord/charge to private arrays for pb/mp
-      ! protein atoms go into internal portion
+      ! copy reordered coord/charge to private arrays for pb/mp or ifcap == 2,5
+      ! protein atoms go into internal portion (so do IONS!)
        
-      ifirst = 1; ilast = ipres(ibgwat-1)
+      ifirst = 1; ilast = ipres(ibgwat)-1
+
       do iatm = ifirst, ilast
          acrd(1,iatm) = x(1,iatm); acrd(2,iatm) = x(2,iatm); acrd(3,iatm) = x(3,iatm)
          acrg(iatm) = cg(iatm)/18.2223d0; acg(iatm) = cg(iatm); atmind(iatm) = iatm
+         mapout(iatm) = iatm
       end do
        
       ! water atoms go into internal/external portion
        
       ifirst = ipres(ibgwat); ilast = natom
+
       i = ifirst; j =  inatm + 1
       do iatm = ifirst, ilast
          if ( outflag(iatm) == 0 ) then
             acrd(1,i   ) = x(1,iatm); acrd(2,i   ) = x(2,iatm); acrd(3,i   ) = x(3,iatm)
             acrg(i   ) = cg(iatm)/18.2223d0; acg(i   ) = cg(iatm); atmind(i   ) = iatm
+            mapout(iatm) = i
             i = i + 1
          else
             acrd(1,j   ) = x(1,iatm); acrd(2,j   ) = x(2,iatm); acrd(3,j   ) = x(3,iatm);
             acrg(j   ) = cg(iatm)/18.2223d0; acg(j   ) = cg(iatm); atmind(j   ) = iatm
+            mapout(iatm) = j
             j = j + 1
+         end if
+      end do
+
+      ! store original outflag array and prepare an updated one for water atoms
+
+      outflagorig = outflag
+      do iatm = ifirst, ilast
+         if( iatm <= inatm ) then
+            outflag(iatm) = 0
+         else
+            outflag(iatm) = 1
          end if
       end do
        
@@ -388,6 +440,7 @@ subroutine pb_atmconv( mpopt,natom,ibgwat,ienwat,outflag,atmind,ipres,x,cg,acg )
       do iatm = 1, natom
          acrd(1,iatm) = x(1,iatm); acrd(2,iatm) = x(2,iatm); acrd(3,iatm) = x(3,iatm)
          acrg(iatm) = cg(iatm)/18.2223d0; acg(iatm) = cg(iatm)
+         mapout(iatm) = iatm
       end do
    end if
  
@@ -396,236 +449,285 @@ end subroutine pb_atmconv
 end subroutine pb_force
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ driver for FDPB forces and energy
-subroutine pb_fdfrc(pbverbose,pbprint,pbgrid,ifcap,ipb,natom,pbfrc,eelrf,ionene,npbstep,npbgrid,nstlim )
+subroutine pb_fdfrc( pbverbose,pbprint,pbgrid,ifcap,ipb,imin,natom,atmlast,npdec,idecomp,irespw, &
+                     ipres,jgroup,ibgwat,ibgion,pbfrc,eelrf,ionene,npbstep,npbgrid,nstlim )
 
-   use timer_module
    use solvent_accessibility, only : dprob,iprob,radi,radip3,nzratm,nsatm, &
        narcdot,maxarc,marc,m2narc,fstarc,arcatm,arccrd,savarc,dotarc
-
-   implicit none
+   use timer_module
 
    ! passed variables
     
    logical pbverbose, pbprint, pbgrid  
-   integer ifcap, ipb, natom, npbstep, npbgrid, nstlim
+   integer ifcap, ipb, imin, natom, atmlast, npdec, idecomp, ibgwat, ibgion
+   integer npbstep, npbgrid, nstlim
+   integer irespw(*), ipres(*), jgroup(*)
    _REAL_ ionene, eelrf, pbfrc(3,natom)!, fnet(3)
     
    ! local variables
     
-   integer iatm, xsoffset 
-   _REAL_ eelself, eelcoul
-   _REAL_ rh, fcrd(3,natom)
+   integer iatm, xsoffset, lastatm, mpdec
+   _REAL_ eelself, eelcoul, rh, fcrd(3,atmlast)
    _REAL_ aa, bb, cc, aa1, bb1, cc1
    _REAL_ bb1cc1, bb_cc1, bb1cc, bb_cc
+   _REAL_ acrgtmp
+
+   mpdec = 1
+   if(idecomp > 2) mpdec = npdec
+
+   !-- PB pairwise decomp <<1,mpdec>>
+   do m = 1, mpdec
     
-   ! do fdpb calculations upto nfocus
+      ! do fdpb calculations upto nfocus
 
-   eelself = ZERO; eelcoul = ZERO
-   xsoffset = 1
-   do level = 1, nfocus
+!     eelself = ZERO; eelcoul = ZERO
+      xsoffset = 1
+      do level = 1, nfocus
        
-      ! retrieving saved grid data into working variables
+         ! retrieving saved grid data into working variables
 
-      bcopt = savbcopt(level)
-      xm = savxm(level); ym = savym(level); zm = savzm(level)
-      xmym = xm*ym; xmymzm = xmym*zm
-      h = savh(level)
-      gox = savgox(level); goy = savgoy(level); goz = savgoz(level)
+         bcopt = savbcopt(level)
+         xm = savxm(level); ym = savym(level); zm = savzm(level)
+         xmym = xm*ym; xmymzm = xmym*zm
+         h = savh(level)
+         gox = savgox(level); goy = savgoy(level); goz = savgoz(level)
        
-      ! grid-unit version of the acrd array
+         ! grid-unit version of the acrd array
        
-      rh = ONE/h
-      if ( ifcap /= 0 ) then 
-         gcrd(1,-1) = (acrd(1,-1) - gox)*rh
-         gcrd(2,-1) = (acrd(2,-1) - goy)*rh
-         gcrd(3,-1) = (acrd(3,-1) - goz)*rh
-      end if
-      do iatm = 1, natom
-         gcrd(1,iatm) = (acrd(1,iatm) - gox)*rh
-         gcrd(2,iatm) = (acrd(2,iatm) - goy)*rh
-         gcrd(3,iatm) = (acrd(3,iatm) - goz)*rh
-      end do
-      do iatm = 1, natom
-         icrd(1,iatm) = floor(gcrd(1,iatm))
-         icrd(2,iatm) = floor(gcrd(2,iatm))
-         icrd(3,iatm) = floor(gcrd(3,iatm))
-         fcrd(1,iatm) =  dble(icrd(1,iatm))
-         fcrd(2,iatm) =  dble(icrd(2,iatm))
-         fcrd(3,iatm) =  dble(icrd(3,iatm))
-      end do
-      do iatm = 1, natom
-         aa = gcrd(1,iatm) - fcrd(1,iatm)
-         bb = gcrd(2,iatm) - fcrd(2,iatm)
-         cc = gcrd(3,iatm) - fcrd(3,iatm)
-         bb1 = ONE - bb; cc1 = ONE - cc
-         aa  = acrg(iatm)*aa; aa1 = acrg(iatm) - aa
-         bb1cc1 = bb1*cc1; bb_cc1 = bb *cc1
-         bb1cc  = bb1*cc ; bb_cc  = bb *cc
-         gcrg(1,iatm) = aa1*bb1cc1; gcrg(2,iatm) = aa *bb1cc1
-         gcrg(3,iatm) = aa1*bb_cc1; gcrg(4,iatm) = aa *bb_cc1
-         gcrg(5,iatm) = aa1*bb1cc ; gcrg(6,iatm) = aa *bb1cc
-         gcrg(7,iatm) = aa1*bb_cc ; gcrg(8,iatm) = aa *bb_cc
-      end do
-       
-      ! set up dielectric map
-      ! when ifcap == 0, do dielectric map assignment everystep
-      ! when ifcap /= 0, do dielectric map assignment once only when grid is set up
-
-      call timer_start(TIME_PBEPS)
-      if ( ifcap == 0 .or. pbgrid ) then
-
-         ! part I,
-         ! when solving systems with salt, set up stern layer map, on the grid
-         ! points
-
-         if ( istrng /= ZERO ) call pb_ionmap( pbverbose,natom,iprob,&
-              h,gox,goy,goz,xm,ym,zm,xmymzm,&
-              gcrd,radi,&
-              atmsas,insas,zv,iv)
-
-         ! part II,
-         ! here comes the dielectric map on the grid edges: x, y, and z
-
-         call pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
-              smoothopt,dprob,epsin,epsout,&
-              h,gox,goy,goz,xm,ym,zm,xmymzm,level,nfocus,&
-              nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
-              gcrd,acrd,radi,radip3,nzratm,&
-              marc,m2narc,fstarc,arcatm,dotarc,arccrd,savarc,&
-              atmsas,insas,lvlset,zv,epsx,epsy,epsz,&
-              iepsav,iepsavx,iepsavy,iepsavz,fedgex,fedgey,fedgez,savbcopt )
-      end if
-      call timer_stop(TIME_PBEPS)
- 
-      ! now call fdpb driver
-
-      call timer_start(TIME_PBSOLV)
-      call pb_fddrv( 1,natom,phi,xs(xsoffset),sbv,npbstep,npbgrid,nstlim,ionene )
-      call timer_stop(TIME_PBSOLV)
-
-      ! if requested, print a summary when the grid is set up
-
-      if ( pbverbose .and. pbprint ) then
-         call pb_print( ifcap, ipb )
-         write(6, *) '  Iterations required        :', itn
-         write(6, *) '  Norm of the constant vector:', inorm
-         write(6, *) '  Norm of the residual vector:', norm
-         write(6, *) '  Convergence achieved       :', norm/inorm
-         write(6, *)
-      end if  !  pbverbose .and. pbprint
-       
-      ! if requested, output phi map
-       
-      if ( outphi .and. level == nfocus ) then
-         if ( phiform == 0 ) then
-            write(6,*) 'writing potential map in delphi format'
-            open(64,file='pbsa.phi',form="unformatted")
-            write(64) ' start of phimap    '
-            write(64) ' potential', ' ------ AMBER PBSA ------ phimap in kT/e (0.593kcal/mol-e)  '
-            write(64) real((frcfac/0.593d0)*phi(1:xmymzm))
-            write(64) ' end of phimap  '
-            write(64) real(1.0d0/h),real(cxbox(level)),real(cybox(level)),real(czbox(level)),xm
-            close(64)
-         elseif ( phiform == 1 ) then
-            write(6,*) 'writing potential map in amber format'
-            open(64,file='pbsa.phi',form="formatted")
-            write(64,*) '# the following data is provided:'
-            write(64,*) '# h, gox, goy, goz'
-            write(64,*) '# xm, ym, zm'
-            write(64,*) '# phi(1:xmymzm) in kcal/mol-e'
-            write(64,*) '# mapping between (i,j,k) and phi index:'
-            write(64,*) '# i + xm * ( j-1 + ym * ( k-1 ) )'
-            write(64,*) '# grid coordinates: xg = gox + h*i; '
-            write(64,*) '# yg = goy + h*j; zg = goz + h*k'
-            write(64,*) h, gox, goy, goz
-            write(64,*) xm, ym, zm
-            write(64,*) frcfac*phi(1:xmymzm)
-            close(64)
-         endif
-      end if  ! outphi .and. level == nfocus
-
-      xsoffset = xsoffset + savxmymzm(level) + 2*savxmym(level)
-!     print *, h, ionene*frcfac
-
-   end do  !  level = 1, nfocus
-
-   ! compute fd energy and force by the qE option
-   ! note that self forces are zero
-   ! delete fd coulomb energy and forces for all close pairs
-   ! dbf is computed by Gilson et al
-
-   if ( eneopt == 1 ) then
-
-      pbfrc = ZERO ! resetting to zero for printing only
-      call pb_qefrc( natom, eelrf, eelself, pbfrc, phi )
-
-      ! when bcopt == 6, we only have reaction field energy in eelrf
-      ! no need to any corrections, coulombic energy should come from
-      ! pb_direct ...
-
-      if ( savbcopt(1) /= 6 ) then 
-         call pb_fdcoulomb( natom, eelcoul, pbfrc )
-         eelrf = eelrf - eelself - eelcoul
-      end if
-
-!      write(6,*) 'final eelrf/ionene in kcal/mol', frcfac*eelrf, frcfac*ionene
-!      write(6,*) 'final eelself in kcal/mol', frcfac*eelself
-!      write(6,*) 'final eelcoul in kcal/mol', frcfac*eelcoul
-
-      ! add ion contributions for nonlinear PBE ...
-
-      if ( npbopt /= 0 ) then
-         eelrf = eelrf + ionene
-      end if
-
-      ! return after converting to kcal/mol
-
-      eelrf = frcfac*eelrf         
-
-      if ( frcopt == 1 ) then
- 
-         ! first printing of qE forces, in electron/Angstrom^2
- 
-         open (unit = 102, file = 'force.dat')
-         write(102,*) ' :::: Atomic qE forces ::::'
-         do iatm = 1, natom
-            write(102,'(3e20.6)') pbfrc(1:3,iatm)*frcfac*INV_AMBER_ELECTROSTATIC2
+         rh = ONE/h
+         if ( ifcap /= 0 ) then 
+            gcrd(1,-1) = (acrd(1,-1) - gox)*rh
+            gcrd(2,-1) = (acrd(2,-1) - goy)*rh
+            gcrd(3,-1) = (acrd(3,-1) - goz)*rh
+         end if
+         do iatm = 1, atmlast
+            gcrd(1,iatm) = (acrd(1,iatm) - gox)*rh
+            gcrd(2,iatm) = (acrd(2,iatm) - goy)*rh
+            gcrd(3,iatm) = (acrd(3,iatm) - goz)*rh
+         end do
+         do iatm = 1, atmlast
+            icrd(1,iatm) =  floor(gcrd(1,iatm))
+            icrd(2,iatm) =  floor(gcrd(2,iatm))
+            icrd(3,iatm) =  floor(gcrd(3,iatm))
+            fcrd(1,iatm) = dble(icrd(1,iatm))
+            fcrd(2,iatm) = dble(icrd(2,iatm))
+            fcrd(3,iatm) = dble(icrd(3,iatm))
+         end do
+         do iatm = 1, atmlast
+            aa = gcrd(1,iatm) - fcrd(1,iatm)
+            bb = gcrd(2,iatm) - fcrd(2,iatm)
+            cc = gcrd(3,iatm) - fcrd(3,iatm)
+            bb1 = ONE - bb; cc1 = ONE - cc
+            !-- PB decomp
+            if (idecomp < 3 ) then
+               acrgtmp = acrg(iatm)
+            else if (iatm >= ipres(irespw(m)) .and. iatm < ipres(irespw(m)+1)) then
+               acrgtmp = acrg(iatm)
+            else
+               acrgtmp = ZERO
+            end if
+            aa  = acrgtmp*aa; aa1 = acrgtmp - aa
+            bb1cc1 = bb1*cc1; bb_cc1 = bb *cc1
+            bb1cc  = bb1*cc ; bb_cc  = bb *cc
+            if((ifcap == 2 .or. ifcap == 5) .and. outflag(iatm) == 1) then
+               gcrg(1,iatm) = ZERO; gcrg(2,iatm) = ZERO
+               gcrg(3,iatm) = ZERO; gcrg(4,iatm) = ZERO
+               gcrg(5,iatm) = ZERO; gcrg(6,iatm) = ZERO
+               gcrg(7,iatm) = ZERO; gcrg(8,iatm) = ZERO
+            else
+               gcrg(1,iatm) = aa1*bb1cc1; gcrg(2,iatm) = aa *bb1cc1
+               gcrg(3,iatm) = aa1*bb_cc1; gcrg(4,iatm) = aa *bb_cc1
+               gcrg(5,iatm) = aa1*bb1cc ; gcrg(6,iatm) = aa *bb1cc
+               gcrg(7,iatm) = aa1*bb_cc ; gcrg(8,iatm) = aa *bb_cc
+            end if
          end do
 
-         pbfrc = ZERO ! resetting to zero for printing only
-         call pb_dbfrc_fld(pbverbose,pbprint,natom,pbfrc,epsx,epsy,epsz,phi)
+         ! set up dielectric map
+         ! when ifcap == 0, do dielectric map assignment everystep
+         ! when ifcap /= 0, do dielectric map assignment once only when grid is set up
 
-         ! second printing of DB forces, in electron/Angstrom^2
+         call timer_start(TIME_PBEPS)
+         if ( ifcap == 0 ) then
 
-         write(102,*) ' :::: Atomic DB forces ::::'
-         do iatm = 1, natom
-            write(102,'(3e20.6)') pbfrc(1:3,iatm)*frcfac*INV_AMBER_ELECTROSTATIC2
-         end do
+            ! part I,
+            ! when solving systems with salt, set up stern layer map, on the grid
+            ! points
+
+            if ( istrng /= ZERO ) call pb_ionmap( pbverbose,natom,iprob,&
+                 h,gox,goy,goz,xm,ym,zm,xmymzm,&
+                 gcrd,radi,&
+                 atmsas,insas,zv,iv)
+
+            ! part II,
+            ! here comes the dielectric map on the grid edges: x, y, and z
+
+            call pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
+                 smoothopt,dprob,epsin,epsout,&
+                 h,gox,goy,goz,xm,ym,zm,xmymzm,level,nfocus,&
+                 nsatm,narcdot,maxarc,nbnd,nbndx,nbndy,nbndz,&
+                 gcrd,acrd,radi,radip3,nzratm,&
+                 marc,m2narc,fstarc,arcatm,dotarc,arccrd,savarc,&
+                 atmsas,insas,lvlset,zv,epsx,epsy,epsz,&
+                 iepsav,iepsavx,iepsavy,iepsavz,fedgex,fedgey,fedgez,savbcopt )
+         elseif ( pbgrid ) then
+            call pb_exmol_cap( pbverbose,ifcap )
+         end if
+         call timer_stop(TIME_PBEPS)
+       
+         ! now call fdpb driver
+
+         call timer_start(TIME_PBSOLV)
+         call pb_fddrv( 1,atmlast,phi,xs(xsoffset),sbv,npbstep,npbgrid,nstlim,ionene )
+         call timer_stop(TIME_PBSOLV)
+
+         ! if requested, print a summary when the grid is set up
+
+         if ( pbverbose .and. pbprint ) then
+            call pb_print( ifcap, ipb )
+            write(6, *) '  Iterations required        :', itn
+            write(6, *) '  Norm of the constant vector:', inorm
+            write(6, *) '  Norm of the residual vector:', norm
+            write(6, *) '  Convergence achieved       :', norm/inorm
+            write(6, *)
+         end if  !  pbverbose .and. pbprint
+       
+         ! if requested, output phi map
+       
+         if ( outphi .and. level == nfocus ) then
+            if ( phiform == 0 ) then
+               write(6,*) 'writing potential map in delphi format'
+               open(64,file='pbsa.phi',form="unformatted")
+               write(64) ' start of phimap    '
+               write(64) ' potential', ' ------ AMBER PBSA ------ phimap in kT/e (0.593kcal/mol-e)  '
+               write(64) real((frcfac/0.593d0)*phi(1:xmymzm))
+               write(64) ' end of phimap  '
+               write(64) real(1.0d0/h),real(cxbox(level)),real(cybox(level)),real(czbox(level)),xm
+               close(64)
+            elseif ( phiform == 1 ) then
+               write(6,*) 'writing potential map in amber format'
+               open(64,file='pbsa.phi',form="formatted")
+               write(64,*) '# the following data is provided:'
+               write(64,*) '# h, gox, goy, goz'
+               write(64,*) '# xm, ym, zm'
+               write(64,*) '# phi(1:xmymzm) in kcal/mol-e'
+               write(64,*) '# mapping between (i,j,k) and phi index:'
+               write(64,*) '# i + xm * ( j-1 + ym * ( k-1 ) )'
+               write(64,*) '# grid coordinates: xg = gox + h*i; '
+               write(64,*) '# yg = goy + h*j; zg = goz + h*k'
+               write(64,*) h, gox, goy, goz
+               write(64,*) xm, ym, zm
+               write(64,*) frcfac*phi(1:xmymzm)
+               close(64)
+            endif
+         end if  ! outphi .and. level == nfocus
+
+         xsoffset = xsoffset + savxmymzm(level) + 2*savxmym(level)
+
+      end do  !  level = 1, nfocus
+
+      ! compute fd energy and force by the qE option
+      ! note that self forces are zero
+      ! delete fd coulomb energy and forces for all close pairs
+      ! dbf is computed by Gilson et al
+
+      if ( eneopt == 1 ) then
+
+         ! compute total qE energy and forces and delete self energy, note that self forces are zero
+
+         call pb_qefrc( natom, atmlast, idecomp, eelrf, eelself, pbfrc, phi )
+
+         ! delete fd grid energy and forces for all close pairs
+         ! when bcopt == 6, we only have reaction field energy in eelrf
+         ! no need to any corrections, coulombic energy should come from
+         ! pb_direct ...
+
+         if ( savbcopt(1) /= 6 ) then 
+            call pb_fdcoulomb( natom, atmlast, idecomp, eelcoul, pbfrc )
+            eelrf = eelrf - eelself - eelcoul
+         end if
+
+!        write(6,*) 'final eelrf/ionene in kcal/mol', frcfac*eelrf, frcfac*ionene
+!        write(6,*) 'final eelself in kcal/mol', frcfac*eelself
+!        write(6,*) 'final eelcoul in kcal/mol', frcfac*eelcoul
+
+         ! add ion contributions for nonlinear PBE ...
+
+         if ( npbopt /= 0 ) then
+            eelrf = eelrf + ionene
+         end if
+
+         !fnet = ZERO
+         !do iatm = 1, atmlast
+         !   fnet(1) = fnet(1) + pbfrc(1, iatm)
+         !   fnet(2) = fnet(2) + pbfrc(2, iatm)
+         !   fnet(3) = fnet(3) + pbfrc(3, iatm)
+         !end do
+         !fnet = fnet/dble(atmlast)
+         !do iatm = 1, atmlast
+         !   pbfrc(1,iatm) = frcfac*(pbfrc(1,iatm) - fnet(1))
+         !   pbfrc(2,iatm) = frcfac*(pbfrc(2,iatm) - fnet(2))
+         !   pbfrc(3,iatm) = frcfac*(pbfrc(3,iatm) - fnet(3))
+         !end do
+
+         eelrf = frcfac*eelrf
+         pbfrc = frcfac*pbfrc
+
+         if ( frcopt == 1 ) then
+            open (unit = 102, file = 'force.dat')
+            write(102,*) ' :::: Atomic qE forces ::::'
+            do iatm = 1, natom
+               write(102,'(3e20.6)') pbfrc(1:3,iatm)*INV_AMBER_ELECTROSTATIC2
+            end do
+
+            pbfrc = ZERO ! resetting to zero for printing only
+            call pb_dbfrc_fld(pbverbose,pbprint,natom,pbfrc,epsx,epsy,epsz,phi)
+
+            ! second printing of DB forces, in electron/Angstrom^2
+
+            pbfrc = frcfac*pbfrc
+            write(102,*) ' :::: Atomic DB forces ::::'
+            do iatm = 1, natom
+               write(102,'(3e20.6)') pbfrc(1:3,iatm)*INV_AMBER_ELECTROSTATIC2
+            end do
+         end if
+
+      ! compute fdfrc by the charge option
+      ! dbf is computed by Ye et al
+
+      else if ( eneopt == 2 .and. epsin /= epsout ) then
+
+         if (ifcap == 2 .or. ifcap == 5) then
+            ! Only consider protein atoms for calc of total qE energy
+            if(ibgion /= 0) then
+               lastatm = ipres(ibgion) - 1
+            else if(ibgwat /= 0) then
+               lastatm = ipres(ibgwat) - 1
+            else
+               lastatm = atmlast
+            end if
+         else
+            ! Consider all atoms
+            lastatm = atmlast
+         end if
+
+         if ( frcopt == 2 ) then
+            zv(1:xmymzm) = -dble(insas(1:xmymzm)) ! pseudo signed distance function
+            call pb_dbfrc_crg(pbverbose,pbprint,natom,eelrf,pbfrc, &
+                             epsx,epsy,epsz,zv(1),phi,sbv,cphi)
+
+         else if ( frcopt == 3 ) then
+            zv(1:xmymzm) = -dble(insas(1:xmymzm)) ! pseudo signed distance function
+            call pb_dbfrc_fld2(pbverbose,pbprint,natom,eelrf,pbfrc, &
+                              epsx,epsy,epsz,zv(1),phi,sbv,cphi)
+         else
+            call pb_dbene( pbverbose,pbprint,natom,lastatm,ifcap,npdec,idecomp,m,irespw, &
+                           ipres,eelrf,pbfrc,insas,phi,sbv )
+
+         end if
 
       end if
 
-   ! compute fdfrc by the charge option
-   ! dbf is computed by Ye et al
-
-   else if ( eneopt == 2 .and. epsin /= epsout ) then
-
-      if ( frcopt == 2 ) then
-
-         pbfrc = ZERO ! resetting to zero for printing only
-         zv(1:xmymzm) = -real(insas(1:xmymzm)) ! pseudo signed distance function
-         call pb_dbfrc_crg(pbverbose,pbprint,natom,eelrf,pbfrc, &
-                          epsx,epsy,epsz,zv(1),phi,sbv,cphi)
-      else if ( frcopt == 3 ) then
-         pbfrc = ZERO ! resetting to zero for printing only
-         zv(1:xmymzm) = -real(insas(1:xmymzm)) ! pseudo signed distance function
-         call pb_dbfrc_fld2(pbverbose,pbprint,natom,eelrf,pbfrc, &
-                           epsx,epsy,epsz,zv(1),phi,sbv,cphi)
-      else
-         call pb_dbene( pbverbose,pbprint,natom,eelrf,insas,phi,sbv )
-      end if
-
-   end if
-
+   end do !-- PB pairwise decomp <<1,mpdec>>
  
 end subroutine pb_fdfrc
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -637,9 +739,8 @@ subroutine pb_fddrv( atmfirst,atmlast,phi,xs,sbv,npbstep,npbgrid,nstlim,ionene )
    ! map.
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-   use timer_module 
-   implicit none
+    
+   use timer_module
 
    ! Passed variables
     
@@ -651,11 +752,11 @@ subroutine pb_fddrv( atmfirst,atmlast,phi,xs,sbv,npbstep,npbgrid,nstlim,ionene )
     
    integer l
    _REAL_ factor, factor1
-    
+   
    ! initialize A and b to zero, initialize the working arrays to zero,
    ! except RD, the reciprocal of D, to ONE. save final dielectric map
    ! for boundary force calculation since the AM() array will be overwritten.
-    
+
    bv (1:xmymzm) = ZERO
    sbv(1:xmymzm) = ZERO
 
@@ -673,8 +774,7 @@ subroutine pb_fddrv( atmfirst,atmlast,phi,xs,sbv,npbstep,npbgrid,nstlim,ionene )
       call pb_dbcgrd( bv(1), sbv(1), cphi(1), insas(1), epsx(1), epsy(1), epsz(1) )
    end if
 
-   ! set the boundary condition, note except the first level, focusing is needed
- 
+   ! set the boundary condition, note except the first level, focusing is needed 
    call pb_bndcnd( bv(1), sbv(1) )
 
    ! sbv stores the grid charge 
@@ -685,7 +785,7 @@ subroutine pb_fddrv( atmfirst,atmlast,phi,xs,sbv,npbstep,npbgrid,nstlim,ionene )
 
    ! enter the core iteration routine
 
-   call timer_start(TIME_PBITR)
+!  call timer_start(TIME_PBITR)
    if ( npbopt == 0) then
       call solve_lpb(xm,ym,zm,xmym,xmymzm,maxitn &
                      ,fmiccg,accept,pbkappa,epsout,h,wsor &
@@ -697,8 +797,7 @@ subroutine pb_fddrv( atmfirst,atmlast,phi,xs,sbv,npbstep,npbgrid,nstlim,ionene )
                     inorm,norm,wsor,lwsor, &
                     iv(1),bv(1))
    end if
-   call timer_stop(TIME_PBITR)
- 
+!  call timer_stop(TIME_PBITR)
 
 contains
 
@@ -741,7 +840,6 @@ subroutine solve_lpb(nx,ny,nz,nxny,nxnynz,p_maxitn &
    call deallocate_array(solvopt)
 
 end subroutine solve_lpb
-
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 subroutine solve_npb(nx,ny,nz,nxny,nxnynz,p_itn,p_maxitn, &
@@ -842,25 +940,6 @@ subroutine solve_npb(nx,ny,nz,nxny,nxnynz,p_itn,p_maxitn, &
    call deallocate_array(solvopt)
 
 end subroutine solve_npb
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+ set dielectric value extending outside the map to zero to avoid double counting
-!+ This is the upper sides
-subroutine pb_setupper( am1, am2, am3 )
-
-   _REAL_ am1(xm,ym,zm), am2(xm,ym,zm), am3(xm,ym,zm)
-   integer i, j, k
-
-   do j = 1, ym; do k = 1, zm
-      am1(xm,j,k) = ZERO
-   end do; end do
-   do i = 1, xm; do k = 1, zm
-      am2(i,ym,k) = ZERO
-   end do; end do
-   do i = 1, xm; do j = 1, ym
-      am3(i,j,zm) = ZERO
-   end do; end do
- 
-end subroutine pb_setupper
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Map atomic charges onto grid
 subroutine pb_crggrd ( atmfirst, atmlast, bv )
@@ -1353,14 +1432,12 @@ _REAL_ function phintp( xmtmp,ymtmp,zmtmp,ix,iy,iz,aa,bb,cc,aa1,bb1,cc1 )
             aa *bb_cc *phi( ix+1 + xmtmp*( iy   + ymtmp*( iz   ) ) )
                 
 end function phintp
-
-
 end subroutine pb_fddrv
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ total finite difference es energy and forces
-subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
+subroutine pb_qefrc( natom, atmlast, idecomp, grdnrg, grdself, pbfrc, phi )
    
-   implicit none
+   use decomp, only: decpair
 
    ! Common variables
    
@@ -1369,7 +1446,7 @@ subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
    
    ! Passed variables
    
-   integer natom
+   integer natom, atmlast, idecomp
    _REAL_ grdnrg, grdself
    _REAL_ pbfrc(3, natom)
    _REAL_ phi(xm,ym,zm)
@@ -1380,6 +1457,7 @@ subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
    integer i, j, k
    _REAL_ :: g000, g100, g110, g111
    _REAL_ :: gci1, gci2, gci3, gci4, gci5, gci6, gci7, gci8
+   _REAL_ :: grdnrgtmp, grdselftmp, hpsnrv
    
    ! begin code
    
@@ -1387,6 +1465,8 @@ subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
    g100 = green(1,0,0)/(FOURPI)
    g110 = green(1,1,0)/(FOURPI)
    g111 = green(1,1,1)/(FOURPI)
+
+   hpsnrv = ONE/(h*epsin)
       
    grdnrg = ZERO
    grdself = ZERO
@@ -1395,20 +1475,22 @@ subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
    ! grid points according to the trilinear weighting
    ! function and add up each of the contributions.
       
-   do iatm = 1, natom
+   do iatm = 1, atmlast
       i = icrd(1,iatm); j = icrd(2,iatm); k = icrd(3,iatm)
       gci1 = gcrg(1,iatm); gci2 = gcrg(2,iatm)
       gci3 = gcrg(3,iatm); gci4 = gcrg(4,iatm)
       gci5 = gcrg(5,iatm); gci6 = gcrg(6,iatm)
       gci7 = gcrg(7,iatm); gci8 = gcrg(8,iatm)
       
-      grdnrg = grdnrg + &
+      grdnrgtmp = &
          gci1*phi(i  ,j  ,k  ) + gci2*phi(i+1,j  ,k  ) + &
          gci3*phi(i  ,j+1,k  ) + gci4*phi(i+1,j+1,k  ) + &
          gci5*phi(i  ,j  ,k+1) + gci6*phi(i+1,j  ,k+1) + &
          gci7*phi(i  ,j+1,k+1) + gci8*phi(i+1,j+1,k+1)
+
+      grdnrg = grdnrg + grdnrgtmp
       
-      grdself = grdself + &
+      grdselftmp = &
          g000 * (gci1*gci1 + gci2*gci2 + gci3*gci3 + gci4*gci4 + &
                  gci5*gci5 + gci6*gci6 + gci7*gci7 + gci8*gci8 )*HALF + &
          g100 * (gci1*gci2 + gci1*gci3 + gci1*gci5 + gci2*gci4 + &
@@ -1418,6 +1500,14 @@ subroutine pb_qefrc( natom, grdnrg, grdself, pbfrc, phi )
                  gci2*gci5 + gci2*gci8 + gci4*gci6 + gci4*gci7 + &
                  gci3*gci5 + gci3*gci8 + gci5*gci8 + gci6*gci7 ) + &
          g111 * (gci1*gci8 + gci2*gci7 + gci4*gci5 + gci6*gci3 )
+
+      grdself = grdself + grdselftmp
+
+      !-- PB decomp
+      if(idecomp == 1 .or. idecomp == 2) then
+         grdnrgtmp = frcfac*(HALF*grdnrgtmp - grdselftmp*hpsnrv)
+         call decpair(1,iatm,iatm,grdnrgtmp)
+      end if
 
       pbfrc(1,iatm) = &
          gci1*ex(i  ,j  ,k  ) + gci2*ex(i+1,j  ,k  ) + &
@@ -1471,9 +1561,9 @@ end function ez
 end subroutine pb_qefrc
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ FD coulombic energy and forces.
-subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
+subroutine pb_fdcoulomb( natom, atmlast, idecomp, grdcoul, pbfrc )
    
-   implicit none
+   use decomp, only: decpair
 
    ! Common variables
    
@@ -1482,7 +1572,7 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
    
    ! Passed variables
    
-   integer natom
+   integer natom, atmlast, idecomp
    _REAL_ grdcoul
    _REAL_ pbfrc(3, natom)
    
@@ -1494,19 +1584,21 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
    _REAL_ gci1, gci2, gci3, gci4, gci5, gci6, gci7, gci8
    _REAL_ gcj1, gcj2, gcj3, gcj4, gcj5, gcj6, gcj7, gcj8
    _REAL_ gcij(27)
-   _REAL_ factor, factor1
+   _REAL_ factor, factor1, decfac
    _REAL_ ffx, ffy, ffz
    _REAL_ dumx, dumy, dumz
    _REAL_ frc(3, natom)
+   _REAL_ grdcoultmp
    
    ! begin code
    
    factor  = ONE/( FOURPI*epsin*h )
    factor1 = HALF/( FOURPI*epsin*h*h )
+   decfac  = -factor*frcfac
    
    grdcoul = ZERO
    frc = ZERO
-   ilast = natom - 1
+   ilast = atmlast - 1
    do iatm = 1, ilast
       ix = icrd(1,iatm); iy = icrd(2,iatm); iz = icrd(3,iatm)
       
@@ -1520,6 +1612,7 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
       dumx = ZERO; dumy = ZERO; dumz = ZERO
       do jp = jfirst, jlast
          jatm = iprshrt(jp)
+         if( jatm > atmlast ) cycle
          jx = icrd(1,jatm); jy = icrd(2,jatm); jz = icrd(3,jatm)
          
          gcj1 = gcrg(1,jatm); gcj2 = gcrg(2,jatm)
@@ -1562,7 +1655,7 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
          gcij(26) = gci7*gcj2
          gcij(27) = gci8*gcj1
 
-         grdcoul = grdcoul + dble( &
+         grdcoultmp = dble( &
               gci1*( gcj1*l_green(dijx ,dijy ,dijz ) + gcj2*l_green(dijx1,dijy ,dijz ) + &
                      gcj3*l_green(dijx ,dijy1,dijz ) + gcj4*l_green(dijx1,dijy1,dijz ) + &
                      gcj5*l_green(dijx ,dijy ,dijz1) + gcj6*l_green(dijx1,dijy ,dijz1) + &
@@ -1595,6 +1688,11 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
                      gcj3*l_green(dijx2,dijy ,dijz2) + gcj4*l_green(dijx ,dijy ,dijz2) + &
                      gcj5*l_green(dijx2,dijy2,dijz ) + gcj6*l_green(dijx ,dijy2,dijz ) + &
                      gcj7*l_green(dijx2,dijy ,dijz ) + gcj8*l_green(dijx ,dijy ,dijz ) ) )
+
+         grdcoul = grdcoul + grdcoultmp
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) call decpair(1,iatm,jatm,decfac*grdcoultmp)
         
          ffx = dble( gcij( 1)*(l_green(dijx1,dijy ,dijz ) - l_green(dijx2,dijy ,dijz )) + &
                      gcij( 2)*(l_green(dijx0,dijy ,dijz ) - l_green(dijx ,dijy ,dijz )) + &
@@ -1693,7 +1791,7 @@ subroutine pb_fdcoulomb( natom, grdcoul, pbfrc )
    
    grdcoul = factor*grdcoul
    pbfrc  = pbfrc - factor1*frc
-
+   
 contains
 
 function l_green (i,j,k)
@@ -1709,32 +1807,39 @@ function l_green (i,j,k)
    end if
 
 end function l_green
-   
+
 end subroutine pb_fdcoulomb 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ dielectric boundary energy and forces
-subroutine pb_dbene( verbose,eneout,natom,eel,insas,phi,sbv )
+subroutine pb_dbene( verbose,eneout,natom,atmlast,ifcap,npdec,idecomp,m,irespw,ipres, &
+                     eel,f,insas,phi,sbv )
 
    use solvent_accessibility, only : dprob, radi, arccrd, dotarc, arcatm
-   implicit none
+   use decomp, only: decpair
  
    ! Passed variables
  
    logical verbose, eneout
-   integer natom
+   integer natom,atmlast,ifcap,npdec,idecomp,m,irespw(*),ipres(*)
    integer insas(xm,ym,zm)
    _REAL_ phi(xm,ym,zm), sbv(xm,ym,zm)
-   _REAL_ eel
+   _REAL_ eel, f(3,natom)
  
    ! Local variables
  
-   integer  ip, i, j, k, iatm, jatm
+   integer  i, j, k, iatm, jatm, matm, natm, iarc, ip
    _REAL_ srfcrg, factor, scalfact
    _REAL_ g(3), x(3), dx(3), crd(3), dx2, dist, rdist, acg
-   _REAL_ dinv, de, eelrf, pcolomb
+   _REAL_ mvec(3), nvec(3), mdotn, mxnv(3), rmdotn2, fdotm, fdotn
+   _REAL_ d2inv, dinv, de, dff, df(3), dfm, dfn, dum(3), dum_norm(3), dum_tang(3), dumnorm
+   _REAL_ eelrf
+   _REAL_ ax(natom), ay(natom), az(natom)
+   _REAL_ fx(natom), fy(natom), fz(natom)
+   _REAL_ pcolomb
 
    _REAL_, parameter :: smallcrg = 0.5d0
- 
+
+   ! initialization
    pcolomb = ZERO
 
    ! calculate the total potential in solute if bcopt=6
@@ -1750,26 +1855,26 @@ subroutine pb_dbene( verbose,eneout,natom,eel,insas,phi,sbv )
          end do
       end do
    end if
-   
-   ! initialization
- 
+
    factor = THREE*h/(TWOPI)
    scalfact = ONE
  
+   ax = acrd(1,1:natom)
+   ay = acrd(2,1:natom)
+   az = acrd(3,1:natom)
+
    srfcrg = ZERO; eel = ZERO
+   fx = ZERO; fy = ZERO; fz = ZERO
 
    ! for InsightII display
    !open (unit=55, file='ms.dot')
    !write (55, '("DOTS")')
  
    do ip = 1, nbnd
-
-      ! collecting boundary grid info ...
-
       i = iepsav(1,ip); j = iepsav(2,ip); k = iepsav(3,ip); iatm = iepsav(4,ip)
       g(1) = gox + h*i; g(2) = goy + h*j; g(3) = goz + h*k
 
-      ! project the boundary grid point on to the molecular surface
+      ! project the surface grid point on to the molecular surface, crd() is the new coord
 
       if      ( abs(insas(i,j,k)) == 2 .and. iatm > 0 ) then
          ! the contact boundary grid points are projected to the atom spheres
@@ -1793,6 +1898,21 @@ subroutine pb_dbene( verbose,eneout,natom,eel,insas,phi,sbv )
       end if
       crd = x + dx*rdist
 
+!     if (iatm == 0) then
+!        crd = g
+!     else
+!        if ( abs(insas(i,j,k)) == 2 ) then
+!           x(1:3) = acrd(1:3,iatm)
+!           dist = radi(iatm)
+!        else if ( abs(insas(i,j,k)) == 1 ) then
+!           x(1:3) = arccrd(1:3,iatm)
+!           dist = dprob
+!        end if
+!        dx = g - x
+!        rdist = dist*ONE/sqrt(dx(1)**2 + dx(2)**2 + dx(3)**2)
+!        crd = x + dx*rdist
+!     end if
+
       ! for InsightII display
       !write (55,'(4(f8.3,2x))') crd(1:3), 300.
  
@@ -1801,22 +1921,111 @@ subroutine pb_dbene( verbose,eneout,natom,eel,insas,phi,sbv )
       acg = factor*(phi(i,j,k)-&
       SIXTH*( phi(i-1,j,k)+phi(i+1,j,k)+phi(i,j-1,k)+phi(i,j+1,k)+phi(i,j,k-1)+phi(i,j,k+1) ))
       acg = acg - sbv(i,j,k)
-      srfcrg = srfcrg + acg*frcfac/(AMBER_ELECTROSTATIC2)
+      srfcrg = srfcrg + acg*frcfac*INV_AMBER_ELECTROSTATIC2
  
-      ! compute reaction field energy due to this boundary grid point
+      ! compute reaction field energy and forces due to this boundary grid point
 
       eelrf = ZERO
-      do jatm = 1, natom
-         dx(1) = crd(1) - acrd(1,jatm)
-         dx(2) = crd(2) - acrd(2,jatm)
-         dx(3) = crd(3) - acrd(3,jatm)
-         dinv = ONE/sqrt(dx(1)**2 + dx(2)**2 + dx(3)**2)
+      dum = ZERO
+      if(idecomp < 3) then
+         do jatm = 1, atmlast
+            if((ifcap == 2 .or. ifcap == 5) .and. outflag(jatm) == 1) cycle
 
-         de = acg*acrg(jatm)*dinv
-         eelrf = eelrf + de
-      end do
+            dx(1) = crd(1) - ax(jatm)
+            dx(2) = crd(2) - ay(jatm)
+            dx(3) = crd(3) - az(jatm)
+            dinv = ONE/sqrt(dx(1)**2 + dx(2)**2 + dx(3)**2); d2inv = dinv**2
+
+            de = acg*acrg(jatm)*dinv
+            eelrf = eelrf + de
+
+            !-- PB decomp
+            if(idecomp == 1 .or. idecomp == 2) call decpair(1,jatm,jatm,de*frcfac*HALF)
+
+            dff = de*d2inv; df(1) = dx(1)*dff; df(2) = dx(2)*dff; df(3) = dx(3)*dff
+            fx(jatm) = fx(jatm) + df(1)
+            fy(jatm) = fy(jatm) + df(2)
+            fz(jatm) = fz(jatm) + df(3)
+            dum(1) = dum(1) - df(1)
+            dum(2) = dum(2) - df(2)
+            dum(3) = dum(3) - df(3)
+         end do
+      !-- PB pairwise decomp
+      else if(idecomp >= 3) then
+         do n = 1, npdec
+            do jatm = ipres(irespw(n)), ipres(irespw(n)+1)-1
+               dx(1) = crd(1) - ax(jatm)
+               dx(2) = crd(2) - ay(jatm)
+               dx(3) = crd(3) - az(jatm)
+               dinv = ONE/sqrt(dx(1)**2 + dx(2)**2 + dx(3)**2)
+               de = acg*acrg(jatm)*dinv
+               eelrf = eelrf + de
+               call decpair(-1,ipres(irespw(m)),ipres(irespw(n)),de*frcfac*HALF)
+            end do
+         end do
+      end if
+
+      ! collecting energy
+
       eel = eel + eelrf
  
+      ! collecting contact forces
+
+      if ( abs(insas(i,j,k)) == 2 .and. iatm > 0 ) then
+         fx(iatm) = fx(iatm) + dum(1)
+         fy(iatm) = fy(iatm) + dum(2)
+         fz(iatm) = fz(iatm) + dum(3)
+
+      ! collecting reentry forces
+
+      else if ( abs(insas(i,j,k)) == 1 .and. iatm > 0 ) then
+         if ( iatm > 0 ) then
+         iarc = dotarc(iatm)
+         matm = arcatm(1,iarc); natm = arcatm(2,iarc)
+
+         mvec(1:3) = x(1:3) - acrd(1:3,matm)
+         nvec(1:3) = x(1:3) - acrd(1:3,natm)
+         mvec = mvec*ONE/sqrt(mvec(1)**2 + mvec(2)**2 + mvec(3)**2)
+         nvec = nvec*ONE/sqrt(nvec(1)**2 + nvec(2)**2 + nvec(3)**2)
+
+         mxnv(1) = mvec(2)*nvec(3) - nvec(2)*mvec(3)
+         mxnv(2) = nvec(1)*mvec(3) - mvec(1)*nvec(3)
+         mxnv(3) = mvec(1)*nvec(2) - nvec(1)*mvec(2)
+         mxnv = mxnv*ONE/sqrt(mxnv(1)**2 + mxnv(2)**2 + mxnv(3)**2)
+
+         ! split dum() into tangent and normal directions wrt the plan of mvec/nvec
+
+         dumnorm = dum(1)*mxnv(1) + dum(2)*mxnv(2) + dum(3)*mxnv(3)
+         dum_norm = dumnorm*mxnv; dum_tang = dum - dum_norm
+
+         ! further split dum_tangent into mvec and nvec directions
+
+         mdotn = mvec(1)*nvec(1) + mvec(2)*nvec(2) + mvec(3)*nvec(3)
+         rmdotn2 = ONE/(ONE - mdotn**2)
+         fdotm = dum_tang(1)*mvec(1) + dum_tang(2)*mvec(2) + dum_tang(3)*mvec(3)
+         fdotn = dum_tang(1)*nvec(1) + dum_tang(2)*nvec(2) + dum_tang(3)*nvec(3)
+         if ( fdotm < ZERO .and. fdotn < ZERO) then
+            mvec = -mvec; nvec = -nvec
+         else if ( fdotm < ZERO ) then
+            mvec = -mvec
+            mdotn = -mdotn
+         else if ( fdotn < ZERO ) then
+            nvec = -nvec
+            mdotn = -mdotn
+         end if
+         fdotm = abs(fdotm); fdotn = abs(fdotn)
+
+         dfm = (fdotm - fdotn*mdotn)*rmdotn2
+         dfn = (fdotn - fdotm*mdotn)*rmdotn2
+         fx(matm) = fx(matm) + dfm*mvec(1) + HALF*dum_norm(1)
+         fy(matm) = fy(matm) + dfm*mvec(2) + HALF*dum_norm(2)
+         fz(matm) = fz(matm) + dfm*mvec(3) + HALF*dum_norm(3)
+         fx(natm) = fx(natm) + dfn*nvec(1) + HALF*dum_norm(1)
+         fy(natm) = fy(natm) + dfn*nvec(2) + HALF*dum_norm(2)
+         fz(natm) = fz(natm) + dfn*nvec(3) + HALF*dum_norm(3)
+         endif
+      end if
+
    end do ! end of ip = 1, nbnd
 
    ! for InsightII display
@@ -1827,14 +2036,23 @@ subroutine pb_dbene( verbose,eneout,natom,eel,insas,phi,sbv )
       scalfact = abs( totcrg/srfcrg*(ONE/epsin - ONE/epsout)*eps0 )
       srfcrg = scalfact*srfcrg
       eel = scalfact*eel
+      fx = scalfact*fx
+      fy = scalfact*fy
+      fz = scalfact*fz
    end if
     
    eel = HALF*frcfac*eel
+   do iatm = 1, atmlast
+      if((ifcap == 2 .or. ifcap == 5) .and. outflag(iatm) == 1) cycle
+      f(1,iatm) = f(1,iatm) - frcfac*fx(iatm)
+      f(2,iatm) = f(2,iatm) - frcfac*fy(iatm)
+      f(3,iatm) = f(3,iatm) - frcfac*fz(iatm)
+   end do
     
-   !if ( eneout ) then
+   if ( eneout ) then
       write(6, '(1x,a,f12.4)') 'Total surface charge ', srfcrg
       write(6, '(1x,a,f12.4)') 'Reaction field energy', eel
-   !end if
+   end if
 
 contains
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1870,15 +2088,13 @@ subroutine get_coulpot(i,j,k,pot)
    end do  !  iatm = 1, ngrdcrg
 
 end subroutine get_coulpot
-
 end subroutine pb_dbene
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine pb_dbfrc_fld(verbose,eneout,natom,f,epsx,epsy,epsz,phi)
   
    use solvent_accessibility, only : radi, arccrd, dotarc, arcatm
-   implicit none
 
-#  include "pb_constants.h"
+   implicit none
 
    ! passed variables
 
@@ -1981,8 +2197,6 @@ subroutine pb_dbfrc_crg( verbose,eneout,natom,eelrf,f,epsx,epsy,epsz,insas,phi,s
 
    use solvent_accessibility, only : dprob, radi, arccrd, dotarc, arcatm
    implicit none
-
-#  include "pb_constants.h"
 
    ! passed variables
 
@@ -2130,8 +2344,6 @@ end subroutine pb_dbfrc_crg
 subroutine pb_dbfrc_fld2( verbose,eneout,natom,eel,f,epsx,epsy,epsz,insas,phi,sbv,cphi )
 
    use solvent_accessibility, only : dprob, radi, arccrd, dotarc, arcatm
-
-#  include "pb_constants.h"   
 
    ! Passed variables
 
@@ -2479,8 +2691,6 @@ subroutine gradu(l,m,n,phip,n2,n3,xp,yp,zp,dudx,dudy,dudz,u,cu,phi)
 end subroutine gradu
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 subroutine get_charge_pol(nbnd,phi,cphi,sbv,pol_charge,srfcrg)
-
-#  include "pb_constants.h"
 
    ! passed variables
    

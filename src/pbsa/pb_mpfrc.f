@@ -1,6 +1,6 @@
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -15,14 +15,14 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
 
    implicit none
     
+#  include "pb_constants.h"
+
    ! passed variables
     
    integer natom,atmfirst,atmlast,lmax
    _REAL_ rdiel, xctr, yctr, zctr
    _REAL_ epsin, epsout, cg(natom), x(3,natom)
    _REAL_ f(3,natom), eel
-
-#  include "pb_constants.h"
     
    ! local variables
     
@@ -152,7 +152,7 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
     
    do i = 2, lmax+1
       l = lstl(i)
-      dl = real(l)
+      dl = dble(l)
       factortmp = factor(l,0)
       acofftmp = acoff(l)
       aqlmoutrtmp = aqlmoutr(i)
@@ -190,8 +190,8 @@ subroutine pb_mpfrc(natom,atmfirst,atmlast,lmax,rdiel,xctr,yctr,zctr,epsin,epsou
    do i = lmax+2, lmpol
       l = lstl(i)
       m = lstm(i)
-      dl = real(l)
-      dm = real(m)
+      dl = dble(l)
+      dm = dble(m)
       factortmp = factor(l,m)
       acofftmp = acoff(l)
       aqlmoutrtmp = aqlmoutr(i)

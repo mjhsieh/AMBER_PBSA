@@ -252,6 +252,7 @@ subroutine pb_exmol_ses( pbverbose,ifcap,ipb,natom,&
          xi = (arccrd(1,iatm) - gox)*rh; yi = (arccrd(2,iatm) - goy)*rh; zi = (arccrd(3,iatm) - goz)*rh
          call exresph( -1, insas, atmsas, zv(1) )
       end do
+ 
 
    ! modified vdw surface to approximate ses at the coarse level
  
@@ -2078,3 +2079,286 @@ end subroutine bicubic_coef
 
 
 end subroutine density_init
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Driver for molecular dielectric map assignment.
+subroutine pb_exmol_cap( pbverbose,ifcap )
+
+   use poisson_boltzmann    
+   use solvent_accessibility
+
+   implicit none
+
+   ! Passed variables
+ 
+   logical pbverbose
+   integer ifcap
+ 
+   ! Local variables
+
+   logical ses 
+   integer ip, iatm
+   _REAL_ xi, yi, zi
+   _REAL_ range1, rh
+ 
+   epsx(1:xmymzm) = epsout; epsy(1:xmymzm) = epsout; epsz(1:xmymzm) = epsout
+
+   ! mark volume within vdw srf as 2, outside -2, so there are only contact-type
+   ! boundary grid points
+
+   rh = 1/h
+   insas(1:xmymzm) = -2
+   zv(1:xmymzm) = 9999.0d0
+   iatm = -1
+   range1 = radi(iatm)*rh
+   xi = gcrd(1,iatm); yi = gcrd(2,iatm); zi = gcrd(3,iatm)
+   iatm = 1
+   call exvwsph( 2, insas, atmsas, zv(1) )
+
+   ! use the insas grid to setup epsx, epsy and epsz maps
+
+   call epsmap( insas, atmsas, epsx, epsy, epsz )
+
+
+contains
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Mark grid points within atomic vdw surf
+subroutine exvwsph( dielsph,insph,inatm,dst )
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !
+   ! Mark grid points within an atom (dielectric constant dielsph) of index iatm
+   ! as dielpsh. Modified from UHBD (Comp. Phys. Comm. 91:57-95, 1995) routines
+   ! excrx() and exsrfx() by Michael Gilson and Malcom Davis.
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+   implicit none
+    
+   ! Passed variables
+    
+   integer  dielsph
+   integer  insph(xm,ym,zm)
+   integer  inatm(xm,ym,zm)
+   _REAL_ dst(xm,ym,zm)
+    
+   ! Local variables
+    
+   integer  i, j, k
+   integer  lowi, lowj, lowk
+   integer  highi, highj, highk
+   _REAL_ range2, range3, d2
+    
+   lowk = max(1,ceiling(zi - range1)); highk = min(zm,floor(zi + range1))
+   do k = lowk, highk
+
+      range2 = sqrt(range1**2-(zi-dble(k))**2)
+      lowj = max(1,ceiling(yi - range2)); highj = min(ym,floor(yi + range2))
+      do j = lowj, highj
+
+         range3 = sqrt(range2**2-(yi-dble(j))**2)
+         if ( range3 >= 0.0d0 ) then
+
+            lowi = max(1,ceiling(xi - range3)); highi = min(xm,floor(xi + range3))
+            do i = lowi, highi
+               d2 = (i-xi)**2 + (j-yi)**2 + (k-zi)**2
+               if ( insph(i,j,k) == dielsph ) then
+                  if ( d2 < dst(i,j,k) ) then
+                     inatm(i,j,k) = iatm; dst(i,j,k) = d2
+                  end if
+                  cycle
+               end if
+               insph(i,j,k) = dielsph;
+               inatm(i,j,k) = iatm; dst(i,j,k) = d2
+            end do  ! i = lowi, highi
+             
+         end if  ! ( range3 > 0.0d0 )
+          
+      end do  ! j = lowj, highj
+       
+   end do  ! k = lowk, highk
+    
+end subroutine exvwsph
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Map insas into epsmap
+subroutine epsmap( insas,atmsas,epsx,epsy,epsz )
+
+   implicit none
+   integer insas(xm,ym,zm), atmsas(xm,ym,zm)
+   _REAL_ epsx(xm,ym,zm), epsy(xm,ym,zm), epsz(xm,ym,zm)
+
+   integer i, j, k, a, b, c, d, a1, b1, c1, d1
+   _REAL_ epsint
+
+   epsint = 2.0d0*epsin*epsout/(epsin+epsout)
+ 
+   do k = 1, zm-1; do j = 1, ym-1; do i = 1, xm-1
+      a = insas(i,j,k)
+      b = insas(i+1,j,k)
+      a1 = atmsas(i,j,k)
+      b1 = atmsas(i+1,j,k)
+      if ( sign(a,b) == a ) then
+         if ( a > 0 ) then
+            epsx(i,j,k) = epsin
+         end if
+      else
+         if ( smoothopt == 1 ) call epsfracx(i,j,k,a,b,a1,b1,rh,epsint,epsin,epsout)
+         epsx(i,j,k) = epsint
+      end if
+      c = insas(i,j+1,k)
+      c1 = atmsas(i,j+1,k)
+      if ( sign(a,c) == a ) then
+         if ( a > 0 ) then
+            epsy(i,j,k) = epsin
+         end if
+      else
+         if ( smoothopt == 1 ) call epsfracy(i,j,k,a,c,a1,c1,rh,epsint,epsin,epsout)
+         epsy(i,j,k) = epsint
+      end if
+      d = insas(i,j,k+1)
+      d1 = atmsas(i,j,k+1)
+      if ( sign(a,d) == a ) then
+         if ( a > 0 ) then
+            epsz(i,j,k) = epsin
+         end if
+      else
+         if ( smoothopt == 1 ) call epsfracz(i,j,k,a,d,a1,d1,rh,epsint,epsin,epsout)
+         epsz(i,j,k) = epsint
+      end if
+   end do; end do; end do
+ 
+!   do k = 1, zm
+!      write(20, *) 'plane', k
+!   do j = 1, ym
+!      write(20, '(100f6.1)') epsx(1:xm,j,k)/eps0
+!   end do
+!   end do
+!   do k = 1, zm
+!      write(21, *) 'plane', k
+!   do i = 1, xm
+!      write(21, '(100f6.1)') epsy(i,1:ym,k)/eps0
+!   end do
+!   end do
+!   do j = 1, ym
+!      write(22, *) 'plane', j
+!   do i = 1, xm
+!      write(22, '(100f6.1)') epsz(i,j,1:zm)/eps0
+!   end do
+!   end do
+
+end subroutine epsmap
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Assign fractional eps values for x-edges
+subroutine epsfracx( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
+
+   implicit none
+   integer  i, j, k, a, b, a1, b1
+   _REAL_ rh, epsint
+   _REAL_ depsin, depsout
+
+   integer iatm
+   _REAL_ range1, range3, xi, yi, zi, aa
+
+   ! locate the atom that is crossing this x-edge, note the order iatm is assigned
+
+   if ( a == 2 ) then
+      iatm = a1
+   else if ( b == 2 ) then
+      iatm = b1
+   end if
+
+   ! obtain the position and radius of the atom (probe) in grid unit
+
+   range1 = radip3(iatm)*rh; iatm = nzratm(iatm)
+   xi = gcrd(1,iatm); yi = gcrd(2,iatm); zi = gcrd(3,iatm)
+   range3 = sqrt(range1**2-(zi-k)**2-(yi-j)**2)
+   if ( range3 > 0.0d0 ) then
+      if ( b == 2 ) then
+         aa = range3 - xi + dble(i+1)
+      else
+         aa = range3 + xi - dble(i)
+      end if
+      epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
+   else
+      epsint = depsout
+   end if
+
+   ! other situations will not be considered and use default epsint value
+
+end subroutine epsfracx
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Assign fractional eps values for y-edges
+subroutine epsfracy( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
+
+   implicit none
+   integer  i, j, k, a, b, a1, b1
+   _REAL_ rh, epsint
+   _REAL_ depsin, depsout
+
+   integer iatm
+   _REAL_ range1, range3, xi, yi, zi, aa
+
+   ! locate the atom that is crossing this y-edge, note the order iatm is assigned
+
+   if ( a == 2 ) then
+      iatm = a1
+   else if ( b == 2 ) then
+      iatm = b1
+   end if
+
+   ! obtain the position and radius of the atom (probe) in grid unit
+
+   range1 = radip3(iatm)*rh; iatm = nzratm(iatm)
+   xi = gcrd(1,iatm); yi = gcrd(2,iatm); zi = gcrd(3,iatm)
+   range3 = sqrt(range1**2-(zi-k)**2-(xi-i)**2)
+   if ( range3 > 0.0d0 ) then
+      if ( b == 2 ) then
+         aa = range3 - yi + dble(j+1)
+      else
+         aa = range3 + yi - dble(j)
+      end if
+      epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
+   else
+      epsint = depsout
+   end if
+
+   ! other situations will not be considered and use default epsint value
+
+end subroutine epsfracy
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!+ Assign fractional eps values for z-edges
+subroutine epsfracz( i, j, k, a, b, a1, b1, rh, epsint, depsin, depsout )
+
+   implicit none
+   integer  i, j, k, a, b, a1, b1
+   _REAL_ rh, epsint
+   _REAL_ depsin, depsout
+
+   integer iatm
+   _REAL_ range1, range3, xi, yi, zi, aa
+
+   ! locate the atom that is crossing this z-edge, note the order iatm is assigned
+
+   if ( a == 2 ) then
+      iatm = a1
+   else if ( b == 2 ) then
+      iatm = b1
+   end if
+
+   range1 = radip3(iatm)*rh; iatm = nzratm(iatm)
+   xi = gcrd(1,iatm); yi = gcrd(2,iatm); zi = gcrd(3,iatm)
+   range3 = sqrt(range1**2-(yi-j)**2-(xi-i)**2)
+   if ( range3 > 0.0d0 ) then
+      if ( b == 2 ) then
+         aa = range3 - zi + dble(k+1)
+      else
+         aa = range3 + zi - dble(k)
+      end if
+      epsint = (depsout*depsin)/(depsin*(1.0d0-aa) + depsout*aa)
+   else
+      epsint = depsout
+   end if
+
+   ! other situations will not be considered and use default epsint value
+
+end subroutine epsfracz
+
+end subroutine pb_exmol_cap

@@ -149,6 +149,7 @@ end subroutine deallocate_array
 subroutine init_array( solvopt,epsx,epsy,epsz,p_bv,p_iv,p_xs )
    
    implicit none
+
    integer solvopt
    _REAL_ epsx(1:l_xmymzm),epsy(1:l_xmymzm),epsz(1:l_xmymzm)
    _REAL_ p_bv(1:l_xmymzm),p_iv(1:l_xmymzm)
@@ -609,6 +610,7 @@ end subroutine pb_cg
 subroutine pb_mg(phi,xs)
 
    implicit none
+
 ! Passed variables
 
    _REAL_ phi(l_xmymzm), xs(1-l_xmym:l_xmymzm+l_xmym)
@@ -969,6 +971,7 @@ end subroutine restrict_bv
 !===========================================================================
 
    subroutine interpolate(v, xn, yn ,zn, vi, xni, yni, zni, lam1, lam2, lam3, lbz, epsout )
+
 
    integer xn,yn,zn,xni,yni,zni
    _REAL_ v(1:xn*yn*zn),vi(1:xni*yni*zni), epsout

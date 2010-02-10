@@ -13,23 +13,29 @@ SRC=dsvdc.f  pbsa.f pb_read.f pb_write.f getcoor.f \
 	runmd.f runmin.f force.f \
 	pb_init.f sa_driver.f np_force.f pb_force.f pb_nlsolver.f \
 	pb_exmol.f pb_mpfrc.f pb_direct.f pb_list.f timer.f \
-	egb.f ene.f locmem.f myopen.f rdparm.f pb_lsolver.f
+	egb.f ene.f locmem.f myopen.f rdparm.f pb_lsolver.f \
+	decomp.f rgroup.f rfree.f
 
 OBJ=dsvdc.o  pbsa.o pb_read.o pb_write.o getcoor.o \
 	runmd.o runmin.o force.o \
 	pb_init.o sa_driver.o np_force.o pb_force.o pb_nlsolver.o \
 	pb_exmol.o pb_mpfrc.o pb_direct.o pb_list.o timer.o \
-	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o
+	egb.o ene.o locmem.o myopen.o rdparm.o pb_lsolver.o \
+	decomp.o rgroup.o rfree.o
 
-LIBPBSAOBJ=interface.o pbsaapi.o \
+LIBPBSAOBJS=interface.o pbsaapi.o \
         myopen.o pb_read.LIBPBSA.o pb_force.o sa_driver.o pb_nlsolver.o \
         pb_lsolver.o dsvdc.o timer.o pb_init.o pb_exmol.o np_force.o \
-        pb_direct.o pb_list.o pb_write.o pb_mpfrc.o
+        pb_direct.o pb_list.o pb_write.o pb_mpfrc.o \
+        decomp.o rgroup.o rfree.o
 
 all: pbsa$(SFX)
 
-install: pbsa$(SFX) simplepbsa$(SFX)
-	/bin/mv pbsa$(SFX) simplepbsa$(SFX) $(BINDIR)
+install: pbsa$(SFX)
+	/bin/mv pbsa$(SFX) $(BINDIR)
+
+libinstall: libpbsa.a
+	/bin/mv libpbsa.a $(LIBDIR)
 
 uninstall:
 	-rm -f $(BINDIR)/pbsa$(SFX) $(BINDIR)/simplepbsa$(SFX)
@@ -41,10 +47,11 @@ pbsa$(SFX): $(OBJ) syslib netlib c9x-complex
 simplepbsa$(SFX): simplepbsa.o gopt.o libpbsa.a sfflib syslib netlib c9x-complex
 	$(FC) -o simplepbsa$(SFX) simplepbsa.o gopt.o libpbsa.a \
 	$(LIBDIR)/libsff.a ../lib/nxtsec.o $(FLIBSF) $(LDFLAGS)
+	/bin/mv simplepbsa$(SFX) $(BINDIR)
 
-libpbsa.a: $(LIBPBSAOBJ)
+libpbsa.a: $(LIBPBSAOBJS)
 	-rm -f libpbsa.a
-	$(AR) libpbsa.a $(LIBPBSAOBJ)
+	$(AR) libpbsa.a $(LIBPBSAOBJS)
 	$(RANLIB) libpbsa.a
 
 syslib:
@@ -99,7 +106,8 @@ pb_write.o: \
                     md.h\
                     extra.h\
                     pb_force.o\
-                    np_force.o
+                    np_force.o\
+                    decomp.o
 force.o: \
                     copyright.h\
                     egb.o\
@@ -132,7 +140,9 @@ pb_read.o: \
                     parms.h\
                     dynph.h\
                     pb_force.o\
-                    np_force.o
+                    np_force.o\
+                    decomp.o\
+                    rgroup.o
 pb_read.LIBPBSA.o: \
                     copyright.h\
                     box.h\
@@ -166,6 +176,14 @@ np_force.o: \
                     pb_constants.h\
                     pb_force.o\
 		    sa_driver.o
+decomp.o: \
+                    copyright.h
+rgroup.o: \
+                    copyright.h\
+                    ../include/dprec.fh
+rfree.o: \
+                    copyright.h\
+                    ../include/dprec.fh
 pb_force.o: \
                     copyright.h\
                     pb_def.h\
@@ -178,7 +196,8 @@ pb_force.o: \
                     pb_dbfrc_fld2.h\
 		    sa_driver.o\
                     pb_nlsolver.o\
-                    pb_lsolver.o
+                    pb_lsolver.o\
+                    decomp.o
 pb_exmol.o: \
                     copyright.h\
                     pb_def.h\
@@ -190,7 +209,8 @@ pb_mpfrc.o: \
 pb_direct.o: \
                     copyright.h\
                     pb_constants.h\
-                    pb_def.h
+                    pb_def.h\
+                    decomp.o
 pb_list.o: \
                     copyright.h\
                     pb_def.h\
@@ -246,7 +266,8 @@ pbsa.o: \
                     extra.h\
                     timer.h\
                     egb.o\
-                    timer.o
+                    timer.o\
+                    decomp.o
 pbsaapi.o: \
                     pb_force.o\
 		    np_force.o

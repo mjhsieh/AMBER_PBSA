@@ -195,6 +195,8 @@ end subroutine prntmd
 !  now dummies, we still preserve the interface for future usage.
 subroutine report_min_results( nstep, gradient_rms, coordinates, &
       forces, energies, igraph, xx, ix, ih )
+
+   use decomp, only: checkdec, printdec, printpdec
    implicit none
 
    integer, intent(in)    :: nstep
@@ -208,6 +210,7 @@ subroutine report_min_results( nstep, gradient_rms, coordinates, &
    character(len=4), intent(inout) :: ih(*)     ! hollerith dynamic memory
 
 #  include "extra.h"
+#  include "md.h"
 
    _REAL_  :: dummyfac(3)
 
@@ -216,6 +219,9 @@ subroutine report_min_results( nstep, gradient_rms, coordinates, &
    if (master) then
       write(6, '(/ /20x,a,/)' ) 'FINAL RESULTS'
       call prntmd( nstep, 0, 0, 0d0, energies, dummyfac, 0, .false. )
+      if (idecomp > 0) call checkdec(idecomp)
+      if (idecomp == 1 .or. idecomp == 2) call printdec(ix)
+      if (idecomp == 3 .or. idecomp == 4) call printpdec(ix)
    end if
 
    return

@@ -109,7 +109,10 @@ subroutine locmem
     
    ! misc integer arrays
     
-   i66 = i58 + natom         ! IROTAT
+!  CQ
+   ibellygp = i58 + natom         ! IBELLYGP
+   i66 = ibellygp + natom         ! IROTAT
+
    i70 = i66 + natom + 1     ! NSP
    lasti = i70
     

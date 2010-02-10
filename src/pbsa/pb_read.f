@@ -1,6 +1,7 @@
 #include "copyright.h"
 #  define _REAL_ double precision
 
+#ifndef LIBPBSA
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Open input files and read cntrl namelist.
 subroutine mdread1()
@@ -23,7 +24,7 @@ subroutine mdread1()
    
    namelist /cntrl/ ntx,    ipb,    inp,   igb,            &
                     imin,   ntf,    ntb,   dielc,  cut,    & !compatibility
-                    nsnb,   scnb,   scee,  maxcyc, ntmin,  & !compatibility
+                    nsnb,   maxcyc, ntmin,  & !scnb, scee, & !compatibility
                     ivcap,  cutcap, xcap,  ycap,   zcap,   & !compatibility
                     idecomp
 
@@ -65,6 +66,7 @@ subroutine mdread1()
 
    irest = 0
    ibelly = 0
+   idecomp= 0
    ntxo = 1
 !  ig = 71277
 !  tempi = ZERO
@@ -157,15 +159,14 @@ subroutine mdread1()
    dielc  = ONE
    cut    = EIGHT
    nsnb   = 25
-   scnb   = TWO
-   scee   = 1.2d0
+   !scnb   = TWO
+   !scee   = 1.2d0
    maxcyc = 1
    ntmin  = 1
    ivcap  = 0
    xcap   = 0
    ycap   = 0
    zcap   = 0
-   idecomp= 0
  
    ! read pb namelist
  
@@ -193,6 +194,8 @@ end subroutine mdread1
 !+ Initialize to defaults and print the inputable variables.
 subroutine mdread2(x,ix,ih)
 
+   use decomp, only: jgroup, index, irespw
+
    implicit none
 
    _REAL_ x(*)
@@ -200,6 +203,7 @@ subroutine mdread2(x,ix,ih)
    character(len=4) ih(*)
    integer inerr
    integer ipol,iesp,nmropt
+   integer ntmp, ngrp
 
 #  include "pb_constants.h"
 #  include "timer.h"
@@ -241,7 +245,7 @@ subroutine mdread2(x,ix,ih)
       write(6,*) "We are sorry, but irest have to be 0"
       call mexit(6,0)
    endif
-   if (scnb == ZERO ) scnb = TWO
+   !if (scnb == ZERO ) scnb = TWO
    if (dielc <= ZERO ) dielc = ONE
    if (tautp <= ZERO ) tautp = 0.2d0
    if (taup <= ZERO ) taup = 0.2d0
@@ -281,8 +285,8 @@ subroutine mdread2(x,ix,ih)
    write(6,'(5x,3(a,f10.5))') 'dielc   =',dielc, &
          ', cut     =',cut,', intdiel =',intdiel
    
-   write(6,'(5x,3(a,f10.5))') 'scnb    =',scnb, &
-         ', scee    =',scee
+   !write(6,'(5x,3(a,f10.5))') 'scnb    =',scnb, &
+   !      ', scee    =',scee
    
    write(6,'(/a)') 'Frozen or restrained atoms:'
    write(6,'(5x,4(a,i8))') 'ibelly  =',ibelly,', ntr     =',ntr
@@ -318,7 +322,16 @@ subroutine mdread2(x,ix,ih)
    ! If user has requested Poisson-Boltzmann electrostatics, set up variables
     
    call pb_init(ifcap,natom,nres,ntypes,nbonh,nbona,ix(i02),ix(i04),ix(i06),ix(i08),ix(i10),&
-                ix(iibh),ix(ijbh),ix(iiba),ix(ijba),ih(m02),ih(m04),ih(m06),x(l15),x(l97))
+                ix(iibh),ix(ijbh),ix(iiba),ix(ijba),ix(ibellygp),ih(m02),ih(m04),ih(m06),x(l15),x(l97))
+
+   ntmp = 0; ngrp = 0 
+   if(idecomp > 0) then
+      write(6,9428)
+      call rgroup(natom,ntmp,nres,ngrp,ix(i02),ih(m02), &
+            ih(m04),ih(m06),ih(m08),ix(ibellygp), &
+            jgroup,index,irespw,npdec, &
+            x(l60),x(lcrdr),.false.,.false.,.false.,idecomp,5,.true.)
+   end if
 
    ! checking of not supported options
  
@@ -355,10 +368,12 @@ subroutine mdread2(x,ix,ih)
    ! Standard format statements:
    
    9328 format(/80('-')/,'   2.  CONTROL  DATA  FOR  THE  RUN',/80('-')/)
+   9428 format(/4x,'LOADING THE DECOMP ATOMS AS GROUPS',/)
    9008 format(a80)
 
 
 end subroutine mdread2 
+#endif
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Emit defined preprocessor names, ie, flags.
@@ -514,7 +529,8 @@ subroutine pb_read(smoothopt_, radiopt_, npbopt_, solvopt_, maxitn_,   &
    nbuffer_, nfocus_, fscale_, npbgrid_, dbfopt_, bcopt_, scalec_,     &
    eneopt_, frcopt_, nsnbr_, phiout_, phiform_, npbverb_, npopt_,      &
    decompopt_, use_rmin_, use_sav_, maxsph_, maxarc_, ndofd_, ndosas_, &
-   mpopt_, lmax_, epsin_, epsout_, istrng_, pbtemp_, dprob_, iprob_,   &
+   mpopt_, lmax_, pbprint_, &
+   epsin_, epsout_, istrng_, pbtemp_, dprob_, iprob_,   &
    accept_, fillratio_, space_, arcres_, cutres_, cutfd_, cutnb_,      &
    sprob_, vprob_, rhow_effect_, cavity_surften_, cavity_offset_,       &
    cutsa_, fmiccg_, ivalence_, laccept_, wsor_, lwsor_, radinc_,       &
@@ -549,7 +565,8 @@ subroutine pb_read
            nbuffer_, nfocus_, fscale_, npbgrid_, dbfopt_, bcopt_,&
            scalec_, eneopt_, frcopt_, nsnbr_, phiout_, phiform_, &
            npbverb_, npopt_, decompopt_, use_rmin_, use_sav_,    &
-           maxsph_, maxarc_, ndofd_, ndosas_, mpopt_, lmax_
+           maxsph_, maxarc_, ndofd_, ndosas_, mpopt_, lmax_,     &
+           pbprint_
    _REAL_  epsin_, epsout_, istrng_, pbtemp_, dprob_, iprob_,    &
            accept_, fillratio_, space_, arcres_, cutres_, cutfd_,&
            cutnb_, sprob_, vprob_, rhow_effect_, cavity_surften_,&
@@ -702,6 +719,7 @@ subroutine pb_read
    ndosas=ndosas_
    mpopt=mpopt_
    lmax=lmax_
+   pbprint=pbprint_
    epsin=epsin_
    epsout=epsout_
    istrng=istrng_

@@ -11,16 +11,17 @@
 typedef enum { FALSE, TRUE } boolean;
 void prepb_read_(INT_T*,INT_T*,REAL_T*,REAL_T*,INT_T*);
 void pb_read_(int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
-	int*, int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
-	int*, int*, int*, int*, int*, int*, int*, REAL_T*, REAL_T*, REAL_T*,
+	      int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
+	      int*, int*, int*, int*, int*, int*, int*, int*, int*,
+	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, 
 	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
 	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
 	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*,
-	REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*, REAL_T*);
+	REAL_T*, REAL_T*);
 void pb_init_(int*,INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
         INT_T*,INT_T*,INT_T*,INT_T*,INT_T*,
 	INT_T*,INT_T*,INT_T*,INT_T*,
-	STRING_T*,STRING_T*,STRING_T*,REAL_T*,
+	INT_T*,STRING_T*,STRING_T*,STRING_T*,REAL_T*,
 	REAL_T*);
 void mypb_force_(INT_T*,INT_T*,INT_T*,
 	INT_T*,INT_T*,INT_T*,INT_T*,
@@ -90,13 +91,14 @@ PBOPTSTRUCT_T* pboptinit() {
        myoption->offy      = 0.0;
        myoption->offz      = 0.0;
        myoption->sepbuf    = 4.0;
+       myoption->pbprint   = 0;
        return myoption;
 }
 
 REAL_T epbsa(int ipb, PBOPTSTRUCT_T *opt, PARMSTRUCT_T *prm, REAL_T *x,
 	     REAL_T *grad, REAL_T *evdw, REAL_T *eelt, REAL_T *esurf,
 	     REAL_T *edisp){
-	int i, ifcap;
+	int i, ifcap, *dummy;
 	ifcap = 0;
         REAL_T e_PBSA=0;
 	REAL_T *f;
@@ -110,6 +112,7 @@ REAL_T epbsa(int ipb, PBOPTSTRUCT_T *opt, PARMSTRUCT_T *prm, REAL_T *x,
 		&opt->phiform, &opt->npbverb, &opt->npopt, &opt->decompopt,
 		&opt->use_rmin, &opt->use_sav, &opt->maxsph, &opt->maxarc,
 		&opt->ndofd, &opt->ndosas, &opt->mpopt, &opt->lmax,
+		&opt->pbprint,
 		&opt->epsin, &opt->epsout, &opt->istrng, &opt->pbtemp,
 		&opt->dprob, &opt->iprob, &opt->accept, &opt->fillratio,
 		&opt->space, &opt->arcres, &opt->cutres, &opt->cutfd,
@@ -118,11 +121,13 @@ REAL_T epbsa(int ipb, PBOPTSTRUCT_T *opt, PARMSTRUCT_T *prm, REAL_T *x,
 		&opt->fmiccg, &opt->ivalence, &opt->laccept, &opt->wsor,
 		&opt->lwsor, &opt->radinc, &opt->expthresh, &opt->offx,
 		&opt->offy, &opt->offz, &opt->sepbuf);
+        dummy = (int *) malloc(sizeof(int)*prm->Natom);
         pb_init_(&ifcap,&prm->Natom,&prm->Nres,&prm->Ntypes,&prm->Nbonh,&prm->Nbona,
 	     prm->Ipres,prm->Iac,prm->Cno,prm->Iblo,prm->ExclAt,
 	     prm->BondHAt1,prm->BondHAt2,prm->BondAt1,prm->BondAt2,
-	     prm->ResNames,prm->AtomNames,prm->AtomSym,prm->Charges,
+	     dummy,prm->ResNames,prm->AtomNames,prm->AtomSym,prm->Charges,
 	     prm->Rborn);
+        free(dummy);
 
 	f = (REAL_T *) malloc(sizeof(REAL_T)*3*prm->Natom);
 

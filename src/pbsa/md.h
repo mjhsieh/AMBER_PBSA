@@ -18,7 +18,7 @@ integer nrp,nspm,ig,ntx,ntcx,           &!5
       gbsa,vrand,iwrap,nrespa,irespa,nrespai,icfe,  &!47
       rbornstat,ivcap,iconstreff,        &!50
       idecomp,icnstph,ntcnstph,maxdup,   &!54
-      ipb, inp !56
+      ipb, inp, ibgion, ienion  !58
 parameter (BC_MDI=56)
 
 common/mdi/nrp,nspm,ig, &
@@ -29,7 +29,7 @@ common/mdi/nrp,nspm,ig, &
       iwatpr,nsolw,igb,iyammp,gbsa,vrand, &
       iwrap,nrespa,irespa,nrespai,icfe,rbornstat, &
       ivcap,iconstreff,idecomp,klambda,icnstph,ntcnstph,maxdup, &
-      ipb,inp
+      ipb,inp,ibgion,ienion
 
 ! ... floats:
 

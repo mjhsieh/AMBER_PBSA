@@ -1,11 +1,13 @@
+
 ! <compile=optimized>
 #include "copyright.h"
-#  define _REAL_ double precision
+#include "../include/dprec.fh"
 #include "pb_def.h"
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ Driver of direct coulombic and vdw energy and force
-subroutine pb_directnocut( natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1,cn2,cg,x,f,eel,enb )
+subroutine pb_directnocut( natom,proatm,inatm,ipres,ibgwat,ienwat,ibgion,ienion,ntypes,eneopt, &
+                           idecomp,ifcap,iac,ico,nex,iex,cn1,cn2,cg,x,f,eel,enb )
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !
    ! Authors:
@@ -14,35 +16,61 @@ subroutine pb_directnocut( natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
    implicit none
-    
-   ! Passed variables
-    
-   integer natom, proatm, ibgwat, ienwat, ntypes
-   integer iac(*), ico(*), nex(natom), iex(32,natom)
-   _REAL_ cn1(*), cn2(*), cg(natom)
-   _REAL_ x(3,natom)
-   _REAL_ enb, eel, f(3,natom)
 
 #  include "pb_constants.h"
     
+   ! Passed variables
+    
+   integer natom, proatm, inatm, ibgwat, ienwat, ibgion, ienion, ntypes, eneopt, idecomp, ifcap
+   integer ipres(*), iac(*), ico(*), nex(natom), iex(32,natom)
+   _REAL_ cn1(*), cn2(*), cg(natom)
+   _REAL_ x(3,natom)
+   _REAL_ enb, eel, f(3,natom)
+    
    ! Local variables
     
-   integer iaci, ic, watres, watfirst
+   integer iaci, ic, watres, watfirst, ionfirst
    _REAL_ cn1oo, cn2oo, cgoo, cgoh, cghh
-   _REAL_ eelwat, enbwat, eelpro, enbpro
+   _REAL_ eelwat, enbwat, eelpro, enbpro, eelprowat, enbprowat
     
-   eelwat = ZERO; enbwat = ZERO; eelpro = ZERO; enbpro = ZERO
+   eelwat = ZERO; enbwat = ZERO
+   eelpro = ZERO; enbpro = ZERO
+   eelprowat = ZERO; enbprowat = ZERO
+
+   if ( ibgwat /= 0 ) then
+      proatm = ipres(ibgwat) - 1
+   else
+      proatm = natom
+   end if
+
+   if((ifcap == 2 .or. ifcap == 5) .and. proatm > inatm) then
+      write(6, *) 'PB bomb in pb_directnocut(): proatm must not be larger than inatm here'
+      call mexit(6, 1)
+   end if
+
+   watfirst = 0
+   watres = 0
+   ionfirst = 0
    if ( ibgwat /= 0 ) then
       watfirst = proatm + 1
-      watres = ienwat - ibgwat + 1
-   else
-      watfirst = 0
-      watres = 0
+      if(ifcap == 2 .or. ifcap == 5) then
+         watres = (inatm - watfirst + 1) / 3
+      else
+         watres = ienwat - ibgwat + 1
+      end if
+      if( ibgion /= 0) then
+        ionfirst = ipres(ibgion)
+      endif
    end if
     
    ! get protein/protein and protein/water interactions
     
-   call pb_dirpro(proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn2,cg,x,f,eelpro,enbpro)
+   call pb_dirpro(proatm,natom,watres,watfirst,ionfirst,ntypes,ifcap,nex,iex,iac,ico,cn1,cn2,cg,x,f, &
+                  eelpro,enbpro,eelprowat,enbprowat)
+
+   if(ifcap == 2 .or. ifcap == 5) then
+      write(6,'(a,2f10.3)') ' Protein-solvent interactions: ', eelprowat, enbprowat
+   end if
     
    ! get water/water interactions
    ! first get van der Waals and charge-charge pairs
@@ -57,28 +85,35 @@ subroutine pb_directnocut( natom,proatm,ibgwat,ienwat,ntypes,iac,ico,nex,iex,cn1
       call pb_dirwat(watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x,f,eelwat,enbwat)
    end if
     
-   eel = eelwat + eelpro
-   enb = enbwat + enbpro
+   eel = eelwat + eelpro + eelprowat
+   enb = enbwat + enbpro + enbprowat
     
 contains
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ compute direct non-water/all nonbonded interactions
-subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn2,cg,x,f,eelpro,enbpro )
+subroutine pb_dirpro( proatm,natom,watres,watfirst,ionfirst,ntypes,ifcap,nex,iex,iac,ico,cn1,cn2,cg,x,f, &
+                      eelpro,enbpro,eelprowat,enbprowat )
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !
    ! Authors:
    ! Lijiang Yang, Luo Research Group, UC-Irvine
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   use poisson_boltzmann, only: outflag
+   use decomp, only: decpair
     
    implicit none
+
+#  include "pb_constants.h"
     
    ! Passed variables
     
-   integer proatm, natom, watres, watfirst, ntypes, iac(*), ico(*), nex(natom), iex(32, natom)
+   integer proatm, natom, watres, watfirst, ionfirst, ntypes, ifcap
+   integer iac(*), ico(*), nex(natom), iex(32, natom)
    _REAL_ cn1(*), cn2(*), cg(natom)
    _REAL_ x(3,natom)
-   _REAL_ eelpro, enbpro, f(3,natom)
+   _REAL_ eelpro, enbpro, eelprowat, enbprowat, f(3,natom)
     
    ! Local variables
     
@@ -86,22 +121,25 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
    _REAL_ cgi,cgj,cn1ij,cn2ij,cgio,cgih,cn1io,cn2io
    _REAL_ dumx,dumy,dumz,xi,yi,zi,dx,dy,dz,d2inv,r6
    _REAL_ f1,f2,df,df2,fw1,fw2,fw3
-   _REAL_ eelprotmp, enbprotmp
+   _REAL_ eelprotmp, enbprotmp, eelprowattmp, enbprowattmp
    _REAL_ xwij1(3*watres), xwij2(3*watres), xwij3(3*watres), rw1(3*watres)
    _REAL_ fx(3*watres), fy(3*watres), fz(3*watres)
     
    ! Compute interaction energy and forces for non-water atoms 
     
-   ilast = proatm; jlast = natom
+   ilast = proatm
    do i = 1, ilast
+      if((ifcap == 2 .or. ifcap == 5) .and. outflag(i) == 1) cycle
       iaci = ntypes*(iac(i)-1); cgi = cg(i)
       xi = x(1,i); yi = x(2,i); zi = x(3,i)
       dumx = ZERO; dumy = ZERO; dumz = ZERO
       eelprotmp = ZERO; enbprotmp = ZERO
+      eelprowattmp = ZERO; enbprowattmp = ZERO
        
       ! pro/pro interactions
        
       do j = i+1, ilast
+         if((ifcap == 2 .or. ifcap == 5) .and. outflag(j) == 1) cycle
          do jp = 1, nex(i)
             jex = iex(jp,i)
             if (j == jex) goto 10
@@ -109,11 +147,33 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
          dx = xi - x(1,j); dy = yi - x(2,j); dz = zi - x(3,j); cgj=cg(j)
          d2inv = ONE/(dx**2+dy**2+dz**2)
          df2 = -cgi*cgj*sqrt(d2inv)
-         eelprotmp = eelprotmp + df2
+         if(i < ionfirst .and. j >= ionfirst) then
+            ! Count protein <-> ion interactions separately
+            eelprowattmp = eelprowattmp + df2
+         else
+            eelprotmp = eelprotmp + df2
+         end if
          ic = ico(iaci+iac(j)); cn1ij = cn1(ic); cn2ij = cn2(ic)
          r6 = d2inv**3; f2 = cn2ij*r6; f1 = cn1ij*(r6*r6)
-         enbprotmp = enbprotmp + (f2-f1)
-          
+         if(i < ionfirst .and. j >= ionfirst) then
+            ! Count protein <-> ion interactions separately
+            enbprowattmp = enbprowattmp + (f2-f1)
+         else
+            enbprotmp = enbprotmp + (f2-f1)
+         end if
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            if(eneopt == 1) then
+               call decpair(1,i,j,df2)
+            end if
+            call decpair(2,i,j,-df2)
+            call decpair(3,i,j,(f1 - f2))
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-2,i,j,-df2)
+            call decpair(-3,i,j,(f1 - f2))
+         end if
+
          df = ( df2 + SIX*( (f2-f1)-f1 ) )*d2inv
          fw1 = dx*df; fw2 = dy*df; fw3 = dz*df
          dumx = dumx + fw1
@@ -169,10 +229,22 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
 !c !DIR$ IVDEP
       do jp = jfirst, jlast
          df2 = -cgio*sqrt(rw1(jp))
-         eelprotmp = eelprotmp + df2
+         eelprowattmp = eelprowattmp + df2
          r6 = rw1(jp)**3; f2 = cn2io*r6; f1 = cn1io*(r6*r6)
-         enbprotmp = enbprotmp + (f2-f1)
-          
+         enbprowattmp = enbprowattmp + (f2-f1)
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            if(eneopt == 1) then
+               call decpair(1,i,j,df2)
+            end if
+            call decpair(2,i,j,-df2)
+            call decpair(3,i,j,(f1 - f2))
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-2,i,j,-df2)
+            call decpair(-3,i,j,(f1 - f2))
+         end if
+
          df = ( df2+SIX*( (f2-f1)-f1 ) )*rw1(jp)
          fw1 = xwij1(jp)*df; fw2 = xwij2(jp)*df; fw3 = xwij3(jp)*df
          dumx = dumx + fw1
@@ -186,11 +258,21 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
       ! compute forces for i <-> hw1, hw2
        
       jfirst = watres+1; jlast = 3*watres
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jp = jfirst, jlast
          df2 = -cgih*sqrt(rw1(jp))
-         eelprotmp = eelprotmp + df2
-          
+         eelprowattmp = eelprowattmp + df2
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            if(eneopt == 1) then
+               call decpair(1,i,j,df2)
+            end if
+            call decpair(2,i,j,-df2)
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-2,i,j,-df2)
+         end if
+
          df = ( df2 )*rw1(jp)
          fw1 = xwij1(jp)*df; fw2 = xwij2(jp)*df; fw3 = xwij3(jp)*df
          dumx = dumx + fw1
@@ -204,7 +286,7 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
       ! collecting forces
        
       j = watfirst
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jp = 1, watres
          f(1,j  ) = f(1,j  ) + fx(         jp)
          f(2,j  ) = f(2,j  ) + fy(         jp)
@@ -221,6 +303,7 @@ subroutine pb_dirpro( proatm,natom,watres,watfirst,ntypes,nex,iex,iac,ico,cn1,cn
       end if
        
       eelpro = eelpro - eelprotmp; enbpro = enbpro - enbprotmp
+      eelprowat = eelprowat - eelprowattmp; enbprowat = enbprowat - enbprowattmp
        
       f(1,i) = f(1,i) - dumx
       f(2,i) = f(2,i) - dumy
@@ -240,6 +323,8 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
     
    implicit none
     
+#  include "pb_constants.h"
+
    ! Passed variables
     
    integer watfirst, watres, ibgwat, ienwat
@@ -260,7 +345,7 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
    _REAL_ rw1(3*watres),rw2(3*watres),rw3(3*watres)
    _REAL_ fx(3*watres),fy(3*watres),fz(3*watres)
     
-   ilast = ienwat
+   ilast = ibgwat + watres - 1
    natmo = watres   ! the number of water's oxygen atoms
    ni    = 1        ! ni is the counter of waters that have been considered
                     ! for every ii increment, it is incremented by 1
@@ -331,7 +416,7 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
       dumxa = ZERO; dumya = ZERO; dumza = ZERO
       dumxb = ZERO; dumyb = ZERO; dumzb = ZERO
       dumxc = ZERO; dumyc = ZERO; dumzc = ZERO
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jn = 1, natmo-ni
          dfa = -cgoo*sqrt(rw1(jn))
          dfb = -cgoh*sqrt(rw2(jn))
@@ -375,7 +460,7 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
       ! compute the energy and force of H1 and H2 atoms of water(i)
       ! there is natmo-ni water(i)-o(j) pairs, so H1 pairs will be from natmo-ni+1 to 2*(natmo-ni)
         
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jn = natmo-ni+1, 2*(natmo-ni)
          dfa = -cgoh*sqrt(rw1(jn))
          dfb = -cghh*sqrt(rw2(jn))
@@ -411,7 +496,7 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
          fz(jn) = fw3+fw6+fw9
       end do  !  jn = natmo-ni+1, 2*(natmo-ni) 
         
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jn = 2*(natmo-ni)+1, 3*(natmo-ni)
          dfa = -cgoh*sqrt(rw1(jn))
          dfb = -cghh*sqrt(rw2(jn))
@@ -450,7 +535,7 @@ subroutine pb_dirwat( watfirst,watres,ibgwat,ienwat,cn1oo,cn2oo,cgoo,cgoh,cghh,x
       ! Now collecting forces ... for j's and i's
        
       jn = 1; j = i
-!DIR$ IVDEP
+!c !DIR$ IVDEP
       do jj = ii+1, ilast
          j = j + 3
          f(1,j  ) = f(1,j  ) + fx(             jn)
@@ -487,19 +572,22 @@ end subroutine pb_dirwat
 end subroutine pb_directnocut
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !+ pairwise nonbonded forces
-subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
+subroutine pb_directwtcut( natom,atmlast,ifcap,idecomp,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
     
+   use poisson_boltzmann, only: outflag
+   use decomp, only: decpair
+
    implicit none
 
+#  include "pb_constants.h"
+    
    ! Passed variables
     
-   integer natom, iprshrt(*), iar1pb(6,0:natom)
+   integer natom, atmlast, ifcap, idecomp, iprshrt(*), iar1pb(6,0:natom)
    _REAL_ x(3,natom)
    _REAL_ cn1pb(*), cn2pb(*), cn3pb(*)
    _REAL_ f(3,natom)
    _REAL_ eel, enb
-
-#  include "pb_constants.h"
     
    ! Local variables
     
@@ -512,8 +600,9 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
    ! initialization
     
    eel     = ZERO; enb     = ZERO
-   ilast   = natom - 1
+   ilast   = atmlast - 1
    do i = 1, ilast
+      if((ifcap == 2 .or. ifcap == 5) .and. outflag(i) == 1) cycle
       xi   = x(1,i); yi   = x(2,i); zi   = x(3,i)
        
       dumx = ZERO; dumy = ZERO; dumz = ZERO
@@ -525,15 +614,33 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
        
       do jp = jfirst1, jlast1
          j = iprshrt(jp)
+         if( j > atmlast ) cycle   ! Skip waters that should not be considered
+         if((ifcap == 2 .or. ifcap == 5) .and. outflag(j) == 1 ) cycle   ! Skip ions that should not be considered
          dx = xi - x(1,j); dy = yi - x(2,j); dz = zi - x(3,j)
          d2inv = ONE/(dx**2+dy**2+dz**2)
          df2 = cn3pb(jp)*sqrt(d2inv)
          eel = eel+df2
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            call decpair(2,i,j,-df2)
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-2,i,j,-df2)
+         end if
+
          r6 = d2inv**3
          f2 = cn2pb(jp)*r6
          f1 = cn1pb(jp)*(r6*r6)
          enb = enb + (f2-f1)
          df = (df2+SIX*((f2-f1)-f1))*d2inv
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            call decpair(3,i,j,(f1 - f2))
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-3,i,j,(f1 - f2))
+         end if
+
          fw1 = dx*df; fw2 = dy*df; fw3 = dz*df
          dumx = dumx + fw1
          dumy = dumy + fw2
@@ -547,6 +654,8 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
        
       do jp = jfirst2, jlast2
          j = iprshrt(jp)
+         if( j > atmlast ) cycle   ! Skip waters that should not be considered
+         if((ifcap == 2 .or. ifcap == 5) .and. outflag(j) == 1) cycle   ! Skip ions that should not be considered
          dx = xi - x(1,j); dy = yi - x(2,j); dz = zi - x(3,j)
          d2inv = ONE/(dx**2+dy**2+dz**2)
          r6 = d2inv**3
@@ -554,6 +663,14 @@ subroutine pb_directwtcut( natom,iprshrt,iar1pb,cn1pb,cn2pb,cn3pb,x,f,eel,enb )
          f1 = cn1pb(jp)*(r6*r6)
          enb = enb + (f2-f1)
          df = SIX*((f2-f1)-f1)*d2inv
+
+         !-- PB decomp
+         if(idecomp == 1 .or. idecomp == 2) then
+            call decpair(3,i,j,(f1 - f2))
+         else if(idecomp == 3 .or. idecomp == 4) then
+            call decpair(-3,i,j,(f1 - f2))
+         end if
+
          fw1 = dx*df; fw2 = dy*df; fw3 = dz*df
          dumx = dumx + fw1
          dumy = dumy + fw2
